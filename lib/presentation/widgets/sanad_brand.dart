@@ -118,64 +118,68 @@ class SanadTopBar extends StatelessWidget {
         : Icons.arrow_back_rounded;
     return SizedBox(
       height: 42,
-      child: Row(
-        textDirection: textDirection,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            onPressed: onBack,
-            icon: Icon(backIcon),
-            color: AppColor.textPrimary,
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            style: IconButton.styleFrom(
-              backgroundColor: AppColor.surfaceMuted,
-              minimumSize: const Size(36, 36),
-              maximumSize: const Size(36, 36),
-              padding: EdgeInsets.zero,
+          if (onBack != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: IconButton(
+                onPressed: onBack,
+                icon: Icon(backIcon),
+                color: AppColor.textPrimary,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColor.surfaceMuted,
+                  minimumSize: const Size(36, 36),
+                  maximumSize: const Size(36, 36),
+                  padding: EdgeInsets.zero,
+                ),
+              ),
             ),
-          ),
-          Expanded(
-            child: Center(
-              child: stepLabel == null
-                  ? const SanadBrand(markSize: 24, compact: true)
-                  : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 11,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceMuted,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        stepLabel!,
-                        style: const TextStyle(
-                          color: AppColor.textSecondary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+          Center(
+            child: stepLabel == null
+                ? const SanadBrand(markSize: 24, compact: true)
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 6,
                     ),
-            ),
-          ),
-          SizedBox(
-            width: 52,
-            child: onSkip == null
-                ? const SizedBox.shrink()
-                : TextButton(
-                    onPressed: onSkip,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColor.textPrimary,
-                      padding: EdgeInsets.zero,
+                    decoration: BoxDecoration(
+                      color: AppColor.surfaceMuted,
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      skipLabel ?? '',
+                      stepLabel!,
                       style: const TextStyle(
-                        fontSize: 11,
+                        color: AppColor.textSecondary,
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
           ),
+          if (onSkip != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: SizedBox(
+                width: 52,
+                child: TextButton(
+                  onPressed: onSkip,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColor.textPrimary,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    skipLabel ?? '',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

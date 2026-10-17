@@ -35,6 +35,32 @@ class AppLocalizations {
   String get languageVisualLabel =>
       isArabic ? 'تجربة سريرية ثنائية اللغة' : 'Bilingual clinical experience';
   String get continueLabel => isArabic ? 'متابعة' : 'Continue';
+  String get back => isArabic ? 'رجوع' : 'Back';
+  String get roleTitle =>
+      isArabic ? 'اختر صفتك للمتابعة' : 'Choose Your Role to Continue';
+  String get roleSubtitle => isArabic
+      ? 'سنخصص تجربة سند بما يناسب احتياجاتك اليومية.'
+      : "We'll tailor your SANAD experience around your daily needs.";
+  String get patient => isArabic ? 'المريض' : 'Patient';
+  String get patientDescription => isArabic
+      ? 'تابع صحتك واتصل بجهاز سند القابل للارتداء.'
+      : 'Monitor your health and connect your SANAD wearable.';
+  String get patientChip =>
+      isArabic ? 'المزامنة مع الجهاز نشطة' : 'Wearable Sync Active';
+  String get caregiver => isArabic ? 'مقدم الرعاية' : 'Caregiver';
+  String get caregiverDescription => isArabic
+      ? 'ابقَ على اتصال وادعم الشخص الذي ترعاه.'
+      : 'Stay connected and support the person you care for.';
+  String get caregiverChip =>
+      isArabic ? 'وصول العائلة إلى البيانات' : 'Family Telemetry Access';
+  String get privacyTitle =>
+      isArabic ? 'خصوصية وأمان البيانات' : 'Privacy & Data Security';
+  String get privacySubtitle => isArabic
+      ? 'وصول آمن إلى بياناتك الطبية.'
+      : 'Secure access to your medical data.';
+  String get roleHelper => isArabic
+      ? 'يمكنك ربط الأدوار أو التبديل بينها في أي وقت.'
+      : 'You can link or switch roles anytime.';
   String stepLabel(int step) =>
       isArabic ? 'الخطوة $step من 5' : 'Step $step of 5';
   String get homeTitle => isArabic ? 'مرحبًا بك في سند' : 'Welcome to SANAD';

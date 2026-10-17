@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanad/core/localization/locale_controller.dart';
 import 'package:sanad/core/localization/locale_scope.dart';
 import 'package:sanad/main.dart';
-import 'package:sanad/presentaion/screens/language_screen/language_screen.dart';
-import 'package:sanad/presentaion/screens/onboarding/onboarding_screen.dart';
-import 'package:sanad/presentaion/widgets/sanad_button.dart';
+import 'package:sanad/presentation/screens/language_screen/language_screen.dart';
+import 'package:sanad/presentation/screens/onboarding/onboarding_screen.dart';
+import 'package:sanad/presentation/screens/role_selection/role_selection_screen.dart';
+import 'package:sanad/presentation/screens/home_screen/home_screen.dart';
+import 'package:sanad/presentation/widgets/sanad_button.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -52,6 +54,7 @@ void main() {
     expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(find.text('Care That Stays With You.'), findsOneWidget);
     expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.byType(IconButton), findsNothing);
   });
 
   testWidgets('language screen switches between RTL and LTR layouts', (
@@ -90,7 +93,7 @@ void main() {
     );
   });
 
-  testWidgets('onboarding next advances pages and final CTA reaches home', (
+  testWidgets('onboarding next advances pages and opens role selection', (
     tester,
   ) async {
     await openLanguage(tester);
@@ -107,11 +110,92 @@ void main() {
     }
 
     await tester.tap(find.text('Get Started'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(RoleSelectionScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('role-option-patient')), findsOneWidget);
+
+    final caregiverOption = find.byKey(const ValueKey('role-option-caregiver'));
+    await tester.ensureVisible(caregiverOption);
+    await tester.tap(caregiverOption);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Connected care for patients and their families'),
-      findsOneWidget,
-    );
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('role screen renders role selection', (tester) async {
+    await openLanguage(tester);
+    await tester.tap(find.byKey(const ValueKey('language-option-en')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    for (var page = 2; page <= 5; page++) {
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(RoleSelectionScreen), findsOneWidget);
+    expect(find.text('Choose Your Role to Continue'), findsOneWidget);
+    expect(find.byType(IconButton), findsNothing);
+
+    final caregiverOption = find.byKey(const ValueKey('role-option-caregiver'));
+    await tester.ensureVisible(caregiverOption);
+    await tester.tap(caregiverOption);
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.byKey(const ValueKey('role-option-caregiver')), findsOneWidget);
+  });
+
+  testWidgets('Arabic role screen uses RTL content without a back button', (
+    tester,
+  ) async {
+    await openLanguage(tester);
+    await tester.tap(find.text('متابعة'));
+    await tester.pumpAndSettle();
+    for (var page = 2; page <= 5; page++) {
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('ابدأ الآن'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(RoleSelectionScreen), findsOneWidget);
+    expect(find.text('اختر صفتك للمتابعة'), findsOneWidget);
+    expect(find.text('Choose Your Role to Continue'), findsNothing);
+    expect(find.byType(IconButton), findsNothing);
+  });
+
+  testWidgets('role screen remains usable at common phone sizes', (
+    tester,
+  ) async {
+    const sizes = [Size(360, 640), Size(390, 844), Size(430, 900)];
+
+    await tester.binding.setSurfaceSize(sizes.first);
+    await openLanguage(tester);
+    await tester.tap(find.byKey(const ValueKey('language-option-en')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    for (var page = 2; page <= 5; page++) {
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    for (final size in sizes) {
+      await tester.binding.setSurfaceSize(size);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(RoleSelectionScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+
+    await tester.binding.setSurfaceSize(null);
   });
 
   testWidgets('redesigned flow renders at compact, standard, and large sizes', (

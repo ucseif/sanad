@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
-import '../../../presentaion/widgets/onboarding_illustrations.dart';
-import '../../../presentaion/widgets/sanad_brand.dart';
-import '../../../presentaion/widgets/sanad_button.dart';
+import '../../../presentation/widgets/onboarding_illustrations.dart';
+import '../../../presentation/widgets/sanad_brand.dart';
+import '../../../presentation/widgets/sanad_button.dart';
 import '../../../utils/routes.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _finish() {
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
+    Navigator.pushNamed(context, AppRoutes.roleSelection);
   }
 
   Future<void> _next() async {
@@ -61,7 +61,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: SanadTopBar(
                     stepLabel: l10n.stepLabel(_currentPage + 1),
                     skipLabel: l10n.skip,
-                    onBack: () => Navigator.maybePop(context),
                     onSkip: _finish,
                   ),
                 ),
@@ -92,6 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ? l10n.getStarted
                             : l10n.next,
                         onPressed: _next,
+                        fontSize: 19,
                       ),
                     ],
                   ),

@@ -4,8 +4,8 @@ import '../../../core/assets/app_assets.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/localization/locale_scope.dart';
 import '../../../core/theme/app_color.dart';
-import '../../../presentaion/widgets/onboarding_illustrations.dart';
-import '../../../presentaion/widgets/sanad_button.dart';
+import '../../../presentation/widgets/onboarding_illustrations.dart';
+import '../../../presentation/widgets/sanad_button.dart';
 import '../../../utils/routes.dart';
 
 class LanguageScreen extends StatefulWidget {
@@ -96,7 +96,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: AppColor.textSecondary,
-                    fontSize: 12,
+                    fontSize: 14,
                     height: 1.45,
                   ),
                 ),
@@ -137,7 +137,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: AppColor.textSecondary,
-                          fontSize: 10,
+                          fontSize: 12,
                         ),
                       ),
                     ),

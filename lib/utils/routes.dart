@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../presentaion/screens/splash_screen/splash_screen.dart';
-import '../presentaion/screens/home_screen/home_screen.dart';
-import '../presentaion/screens/language_screen/language_screen.dart';
-import '../presentaion/screens/onboarding/onboarding_screen.dart';
+import '../presentation/screens/splash_screen/splash_screen.dart';
+import '../presentation/screens/home_screen/home_screen.dart';
+import '../presentation/screens/language_screen/language_screen.dart';
+import '../presentation/screens/onboarding/onboarding_screen.dart';
+import '../presentation/screens/role_selection/role_selection_screen.dart';
 
 abstract final class AppRoutes {
   static const String splash = SplashScreen.routeName;
   static const String language = LanguageScreen.routeName;
   static const String home = '/home';
   static const String onboarding = OnboardingScreen.routeName;
+  static const String roleSelection = RoleSelectionScreen.routeName;
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -32,6 +34,11 @@ abstract final class AppRoutes {
       case onboarding:
         return MaterialPageRoute<void>(
           builder: (_) => const OnboardingScreen(),
+          settings: settings,
+        );
+      case roleSelection:
+        return MaterialPageRoute<void>(
+          builder: (_) => const RoleSelectionScreen(),
           settings: settings,
         );
       default:
