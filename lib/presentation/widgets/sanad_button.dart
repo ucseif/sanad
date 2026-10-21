@@ -14,14 +14,14 @@ class SanadButton extends StatelessWidget {
 
   final String label;
   final VoidCallback onPressed;
-  final IconData icon;
+  final IconData? icon;
   final double fontSize;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     final textDirection = Directionality.of(context);
-    final resolvedIcon = textDirection == TextDirection.rtl
+    final resolvedIcon = icon != null && textDirection == TextDirection.rtl
         ? Icons.arrow_back_rounded
         : icon;
     return SizedBox(
@@ -50,8 +50,10 @@ class SanadButton extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(resolvedIcon, size: 19),
+            if (resolvedIcon != null) ...[
+              const SizedBox(width: 8),
+              Icon(resolvedIcon, size: 19),
+            ],
           ],
         ),
       ),

@@ -267,7 +267,7 @@ flutter run
 
 - تم توحيد اسم مجلد الـ presentation حاليًا إلى `presentation`.
 - مجلد `lib/core/model/` موجود لكنه فارغ حاليًا؛ الـ models المستخدمة فعليًا موجودة في `lib/domain/models/`.
-- `AppConstants` يحتوي بعض الثوابت القديمة الخاصة بمترو القاهرة بجانب ثوابت SANAD، ويحتاج تنظيفًا عندما يبدأ تطوير features المنتج الأساسية.
+- بيانات الدول وأكواد الاتصال والمحافظات المدعومة مركزية في `AppConstants`، بينما الألوان والخطوط والأصول تظل في ملفاتها المخصصة.
 - Firebase configuration موجودة لـ Android و iOS فقط في `lib/firebase_options.dart`؛ باقي المنصات غير مفعّلة حاليًا.
 
 لمزيد من تفاصيل المنتج والـ scope، راجع [`SANAD_PROJECT_CONTEXT.md`](SANAD_PROJECT_CONTEXT.md).

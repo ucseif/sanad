@@ -9,7 +9,6 @@ import '../presentation/screens/onboarding/onboarding_screen.dart';
 import '../presentation/screens/role_selection/role_selection_screen.dart';
 import '../presentation/screens/login_screen/login_screen.dart';
 import '../presentation/screens/signup_screen/signup_screen.dart';
-import '../presentation/screens/verification_method_screen/verification_method_screen.dart';
 import '../presentation/screens/otp_verification_screen/otp_verification_screen.dart';
 
 abstract final class AppRoutes {
@@ -20,7 +19,6 @@ abstract final class AppRoutes {
   static const String roleSelection = RoleSelectionScreen.routeName;
   static const String login = LoginScreen.routeName;
   static const String signup = SignUpScreen.routeName;
-  static const String verificationMethod = VerificationMethodScreen.routeName;
   static const String otpVerification = OtpVerificationScreen.routeName;
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -61,18 +59,10 @@ abstract final class AppRoutes {
           builder: (_) => SignUpScreen(arguments: _authArguments(settings)),
           settings: settings,
         );
-      case verificationMethod:
-        return MaterialPageRoute<void>(
-          builder: (_) => VerificationMethodScreen(
-            arguments: _authArguments(settings),
-          ),
-          settings: settings,
-        );
       case otpVerification:
         return MaterialPageRoute<void>(
-          builder: (_) => OtpVerificationScreen(
-            arguments: _authArguments(settings),
-          ),
+          builder: (_) =>
+              OtpVerificationScreen(arguments: _authArguments(settings)),
           settings: settings,
         );
       default:

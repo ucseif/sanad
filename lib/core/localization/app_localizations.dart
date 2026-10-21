@@ -38,27 +38,27 @@ class AppLocalizations {
   String get continueLabel => isArabic ? 'متابعة' : 'Continue';
   String get back => isArabic ? 'رجوع' : 'Back';
   String get roleTitle =>
-      isArabic ? 'اختر صفتك للمتابعة' : 'Choose Your Role to Continue';
+      isArabic ? 'كيف ستستخدم سند؟' : 'How will you use SANAD?';
   String get roleSubtitle => isArabic
       ? 'سنخصص تجربة سند بما يناسب احتياجاتك اليومية.'
       : "We'll tailor your SANAD experience around your daily needs.";
   String get patient => isArabic ? 'المريض' : 'Patient';
   String get patientDescription => isArabic
-      ? 'تابع صحتك واتصل بجهاز سند القابل للارتداء.'
-      : 'Monitor your health and connect your SANAD wearable.';
+      ? 'تابع صحتك واربط جهاز سند.'
+      : 'Track your health and sync your SANAD device.';
   String get patientChip =>
       isArabic ? 'المزامنة مع الجهاز نشطة' : 'Wearable Sync Active';
   String get caregiver => isArabic ? 'مقدم الرعاية' : 'Caregiver';
   String get caregiverDescription => isArabic
-      ? 'ابقَ على اتصال وادعم الشخص الذي ترعاه.'
-      : 'Stay connected and support the person you care for.';
+      ? 'كن بجانب شخص تحبه واطمئن عليه.'
+      : 'Support someone you love and stay in the loop.';
   String get caregiverChip =>
       isArabic ? 'وصول العائلة إلى البيانات' : 'Family Telemetry Access';
   String get privacyTitle =>
       isArabic ? 'خصوصية وأمان البيانات' : 'Privacy & Data Security';
   String get privacySubtitle => isArabic
-      ? 'وصول آمن إلى بياناتك الطبية.'
-      : 'Secure access to your medical data.';
+      ? 'بياناتك الصحية تظل خاصة ومحمية.'
+      : 'Your health information stays private and protected.';
   String get roleHelper => isArabic
       ? 'يمكنك ربط الأدوار أو التبديل بينها في أي وقت.'
       : 'You can link or switch roles anytime.';
@@ -69,10 +69,11 @@ class AppLocalizations {
       ? 'تطبيق رعاية متصل بالمرضى وعائلاتهم'
       : 'Connected care for patients and their families';
 
-  String get loginTitle => isArabic ? 'مرحبًا بعودتك' : 'Welcome back';
+  String get loginTitle =>
+      isArabic ? 'سجّل الدخول إلى حسابك' : 'Log in to your account';
   String get loginSubtitle => isArabic
-      ? 'سجل الدخول لمتابعة صحتك أو صحة من تحب.'
-      : 'Sign in to monitor your health or a loved one.';
+      ? 'أهلًا بعودتك، أدخل بياناتك للمتابعة.'
+      : 'Welcome back! Please enter your details.';
   String get createAccountTitle => isArabic ? 'إنشاء حساب' : 'Create account';
   String get signupWelcomeTitle =>
       isArabic ? 'إنشاء حساب جديد' : 'Create a new account';
@@ -145,40 +146,14 @@ class AppLocalizations {
   String get hidePasswordLabel =>
       isArabic ? 'إخفاء كلمة المرور' : 'Hide password';
   String get roleContextLabel => isArabic ? 'الدور المختار' : 'Selected role';
-  String get selectedEmailLabel =>
-      isArabic ? 'البريد المختار' : 'Selected email';
-  String get verificationMethodTitle =>
-      isArabic ? 'اختر طريقة التحقق' : 'Choose a verification method';
-  String get verificationAppBarTitle =>
-      isArabic ? 'التحقق من الرمز' : 'OTP Verification';
-  String get verificationMethodSubtitle => isArabic
-      ? 'اختر الطريقة التي سنستخدمها في تجربة التحقق الحالية.'
-      : 'Choose how the current verification preview should continue.';
-  String get emailVerificationOption =>
-      isArabic ? 'التحقق عبر البريد الإلكتروني' : 'Email verification';
-  String get emailVerificationDescription => isArabic
-      ? 'سنستخدم بريدك الإلكتروني في تجربة التحقق.'
-      : 'Use your email address for the verification preview.';
-  String get smsVerificationOption =>
-      isArabic ? 'التحقق عبر الرسائل النصية' : 'SMS verification';
-  String get smsVerificationDescription => isArabic
-      ? 'التحقق عبر الرسائل النصية غير متاح في هذه المرحلة.'
-      : 'SMS verification is not available in this stage.';
-  String get smsNotAvailableShort =>
-      isArabic ? 'غير متاح حاليًا' : 'Not available yet';
-  String get unavailableSmsMessage => isArabic
-      ? 'التحقق عبر الرسائل النصية غير متاح حاليًا. يمكنك المتابعة باستخدام البريد الإلكتروني.'
-      : 'SMS verification is not available yet. Please continue using email verification.';
   String get verificationPreviewNotice => isArabic
       ? 'هذه معاينة لواجهة التحقق فقط؛ لم يتم إرسال رمز.'
       : 'This is a verification UI preview; no code has been sent.';
-  String get continueWithEmailLabel =>
-      isArabic ? 'المتابعة بالبريد الإلكتروني' : 'Continue with email';
   String get otpTitle =>
       isArabic ? 'أدخل رمز التحقق' : 'Enter verification code';
   String get otpSubtitle => isArabic
-      ? 'أدخل الرمز المكوّن من 6 أرقام في واجهة المعاينة.'
-      : 'Enter the 6-digit code in this verification preview.';
+      ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر واتساب.'
+      : 'Enter the 6-digit code sent to you on WhatsApp.';
   String get otpCodeLabel => isArabic ? 'رمز التحقق' : 'Verification code';
   String get otpIncompleteMessage => isArabic
       ? 'أدخل رمز التحقق المكوّن من 6 أرقام.'
@@ -189,9 +164,35 @@ class AppLocalizations {
   String get otpResendUnavailable => isArabic
       ? 'إعادة الإرسال غير متاحة حتى يتم ربط مزود تحقق حقيقي.'
       : 'Resend is unavailable until a real verification provider is connected.';
+  String get otpSentMessage => isArabic
+      ? 'تم طلب إرسال رمز التحقق عبر واتساب.'
+      : 'WhatsApp code delivery has been requested.';
+  String get otpSendingMessage =>
+      isArabic ? 'جارٍ إرسال رمز التحقق…' : 'Sending verification code…';
+  String get otpServiceUnavailable => isArabic
+      ? 'تعذر الاتصال بخدمة التحقق. حاول مرة أخرى.'
+      : 'Could not reach the verification service. Try again.';
+  String get otpInvalidMessage => isArabic
+      ? 'الرمز غير صحيح. حاول مرة أخرى.'
+      : 'The code is incorrect. Try again.';
+  String get otpExpiredMessage => isArabic
+      ? 'انتهت صلاحية الرمز. أرسل رمزًا جديدًا.'
+      : 'The code expired. Request a new one.';
+  String get otpRateLimited => isArabic
+      ? 'طلبات كثيرة. انتظر قليلًا ثم حاول مجددًا.'
+      : 'Too many requests. Wait a bit and try again.';
+  String get otpVerifiedMessage =>
+      isArabic ? 'تم التحقق بنجاح' : 'Verified successfully';
+  String get otpResendLabel => isArabic ? 'إعادة إرسال الرمز' : 'Resend code';
+  String otpResendCountdown(int seconds) => isArabic
+      ? 'إعادة الإرسال بعد $seconds ثانية'
+      : 'Resend in $seconds seconds';
+  String otpExpiryMessage(DateTime expiresAt) => isArabic
+      ? 'صالح حتى ${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}'
+      : 'Expires at ${expiresAt.hour.toString().padLeft(2, '0')}:${expiresAt.minute.toString().padLeft(2, '0')}';
   String get verifyLabel => isArabic ? 'تحقق' : 'Verify';
   String get verificationIllustrationLabel =>
-      isArabic ? 'رمز تحقق عبر البريد الإلكتروني' : 'Email verification code';
+      isArabic ? 'رمز تحقق عبر واتساب' : 'WhatsApp verification code';
   String otpDigitLabel(int index) => isArabic
       ? 'الرقم ${index + 1} من رمز التحقق'
       : 'Verification code digit ${index + 1}';

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+import 'core/constants/app_constants.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/localization/locale_controller.dart';
 import 'core/localization/locale_scope.dart';
@@ -13,9 +14,7 @@ import 'utils/routes.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final localeController = LocaleController();
 
@@ -23,12 +22,7 @@ Future<void> main() async {
   // to avoid showing the default language first.
   await localeController.load();
 
-  runApp(
-    LocaleScope(
-      controller: localeController,
-      child: const SanadApp(),
-    ),
-  );
+  runApp(LocaleScope(controller: localeController, child: const SanadApp()));
 }
 
 class SanadApp extends StatelessWidget {
@@ -36,11 +30,10 @@ class SanadApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isArabic =
-        context.localeController.locale.languageCode == 'ar';
+    final isArabic = context.localeController.locale.languageCode == 'ar';
 
     return MaterialApp(
-      title: 'SANAD',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppColor.theme(isArabic: isArabic),
       locale: context.localeController.locale,
@@ -53,16 +46,14 @@ class SanadApp extends StatelessWidget {
       ],
       builder: (context, child) {
         return Directionality(
-          textDirection:
-          isArabic ? TextDirection.rtl : TextDirection.ltr,
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: child ?? const SizedBox.shrink(),
         );
       },
-      localeResolutionCallback: (locale, supported) =>
-          supported.firstWhere(
-                (item) => item.languageCode == locale?.languageCode,
-            orElse: () => supported.first,
-          ),
+      localeResolutionCallback: (locale, supported) => supported.firstWhere(
+        (item) => item.languageCode == locale?.languageCode,
+        orElse: () => supported.first,
+      ),
       onGenerateRoute: AppRoutes.onGenerateRoute,
       home: const SplashScreen(),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../core/assets/app_assets.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -7,6 +8,10 @@ import '../../../domain/models/user_role.dart';
 import '../../../presentation/auth/auth_route_arguments.dart';
 import '../../../presentation/widgets/sanad_button.dart';
 import '../../../utils/routes.dart';
+
+const _roleAccent = Color(0xFF40566D);
+const _roleSelectedSurface = Color(0xFFF1F4F7);
+const _roleIconSurface = Color(0xFFE5EBF0);
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -38,7 +43,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: AppColor.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
         child: LayoutBuilder(
@@ -48,6 +53,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Keep the original SANAD mark and its placement unchanged.
                 Center(
                   child: SizedBox(
                     width: (constraints.maxWidth * .34)
@@ -67,56 +73,59 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: compact ? 1 : 2),
-
-                SizedBox(height: compact ? 5 : 16),
-                Text(
-                  l10n.roleTitle,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColor.textPrimary,
-                    fontSize: compact ? 22 : 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
+                SizedBox(height: compact ? 4 : 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: compact ? 112 : 142,
+                      height: compact ? 112 : 142,
+                      child: Lottie.asset(
+                        AppAssets.roleSelectionLottie,
+                        fit: BoxFit.contain,
+                        repeat: true,
+                      ),
+                    ),
+                    SizedBox(width: compact ? 8 : 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            l10n.roleTitle,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              color: AppColor.textPrimary,
+                              fontSize: compact ? 23 : 26,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: compact ? 6 : 9),
+                          Text(
+                            l10n.roleSubtitle,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              color: AppColor.textSecondary,
+                              fontSize: compact ? 12 : 13,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: compact ? 5 : 7),
-                Text(
-                  l10n.roleSubtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColor.textSecondary,
-                    fontSize: 15,
-                    height: 1.4,
-                  ),
-                ),
-                SizedBox(height: compact ? 15 : 22),
-                _RoleCard(
-                  key: const ValueKey('role-option-patient'),
-                  role: UserRole.patient,
-                  title: l10n.patient,
-                  description: l10n.patientDescription,
-                  chipLabel: l10n.patientChip,
-                  selected: _selectedRole == UserRole.patient,
+                SizedBox(height: compact ? 6 : 12),
+                _RolePicker(
+                  patientTitle: l10n.patient,
+                  patientDescription: l10n.patientDescription,
+                  caregiverTitle: l10n.caregiver,
+                  caregiverDescription: l10n.caregiverDescription,
+                  selectedRole: _selectedRole,
                   compact: compact,
-                  onTap: () => _selectRole(UserRole.patient),
-                ),
-                SizedBox(height: compact ? 10 : 12),
-                _RoleCard(
-                  key: const ValueKey('role-option-caregiver'),
-                  role: UserRole.caregiver,
-                  title: l10n.caregiver,
-                  description: l10n.caregiverDescription,
-                  chipLabel: l10n.caregiverChip,
-                  selected: _selectedRole == UserRole.caregiver,
-                  compact: compact,
-                  onTap: () => _selectRole(UserRole.caregiver),
-                ),
-                SizedBox(height: compact ? 14 : 18),
-                _PrivacyBanner(
-                  title: l10n.privacyTitle,
-                  subtitle: l10n.privacySubtitle,
-                  compact: compact,
+                  onSelected: _selectRole,
                 ),
               ],
             );
@@ -153,6 +162,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               SanadButton(
                 label: l10n.continueLabel,
                 onPressed: _continue,
+                icon: null,
                 fontSize: 16,
               ),
             ],
@@ -163,13 +173,54 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 }
 
-class _RoleCard extends StatelessWidget {
-  const _RoleCard({
-    super.key,
+class _RolePicker extends StatelessWidget {
+  const _RolePicker({
+    required this.patientTitle,
+    required this.patientDescription,
+    required this.caregiverTitle,
+    required this.caregiverDescription,
+    required this.selectedRole,
+    required this.compact,
+    required this.onSelected,
+  });
+
+  final String patientTitle;
+  final String patientDescription;
+  final String caregiverTitle;
+  final String caregiverDescription;
+  final UserRole selectedRole;
+  final bool compact;
+  final ValueChanged<UserRole> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _RoleChoice(
+        role: UserRole.patient,
+        title: patientTitle,
+        description: patientDescription,
+        selected: selectedRole == UserRole.patient,
+        compact: compact,
+        onTap: () => onSelected(UserRole.patient),
+      ),
+      SizedBox(height: compact ? 9 : 12),
+      _RoleChoice(
+        role: UserRole.caregiver,
+        title: caregiverTitle,
+        description: caregiverDescription,
+        selected: selectedRole == UserRole.caregiver,
+        compact: compact,
+        onTap: () => onSelected(UserRole.caregiver),
+      ),
+    ],
+  );
+}
+
+class _RoleChoice extends StatelessWidget {
+  const _RoleChoice({
     required this.role,
     required this.title,
     required this.description,
-    required this.chipLabel,
     required this.selected,
     required this.compact,
     required this.onTap,
@@ -178,96 +229,100 @@ class _RoleCard extends StatelessWidget {
   final UserRole role;
   final String title;
   final String description;
-  final String chipLabel;
   final bool selected;
   final bool compact;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final roleLabel = role == UserRole.patient ? 'Patient' : 'Caregiver';
-    final roleIcon = role == UserRole.patient
-        ? Icons.favorite_rounded
-        : Icons.groups_rounded;
-
     return Semantics(
       button: true,
       selected: selected,
       label: title,
       child: InkWell(
+        key: ValueKey('role-option-${role.value}'),
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          constraints: BoxConstraints(minHeight: compact ? 126 : 140),
+          duration: const Duration(milliseconds: 200),
+          constraints: BoxConstraints(minHeight: compact ? 88 : 98),
           padding: EdgeInsetsDirectional.fromSTEB(
-            compact ? 14 : 16,
-            compact ? 14 : 17,
-            compact ? 14 : 16,
-            compact ? 14 : 17,
+            compact ? 13 : 16,
+            compact ? 12 : 14,
+            compact ? 13 : 16,
+            compact ? 12 : 14,
           ),
           decoration: BoxDecoration(
-            color: selected ? AppColor.surfaceMuted : AppColor.surface,
+            color: selected ? _roleSelectedSurface : Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: selected ? AppColor.primary : AppColor.border,
-              width: selected ? 1.2 : 1,
+              color: selected ? _roleAccent : Colors.transparent,
+              width: 1.2,
             ),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 width: compact ? 44 : 48,
                 height: compact ? 44 : 48,
-                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: selected ? AppColor.primary : AppColor.surfaceMuted,
                   shape: BoxShape.circle,
+                  color: selected ? _roleIconSurface : const Color(0xFFF0F3F5),
                 ),
-                child: Icon(
-                  roleIcon,
-                  size: compact ? 21 : 23,
-                  color: selected ? Colors.white : AppColor.textSecondary,
+                child: _RoleMark(
+                  role: role,
+                  color: selected ? _roleAccent : AppColor.textSecondary,
                 ),
               ),
-              SizedBox(width: compact ? 11 : 13),
+              SizedBox(width: compact ? 12 : 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      textAlign: TextAlign.start,
                       style: TextStyle(
                         color: AppColor.textPrimary,
-                        fontSize: compact ? 17 : 18,
+                        fontSize: compact ? 16 : 17,
                         fontWeight: FontWeight.w700,
-                        height: 1.15,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       description,
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColor.textSecondary,
-                        fontSize: 14,
-                        height: 1.35,
+                        fontSize: compact ? 11 : 12,
+                        height: 1.4,
                       ),
-                    ),
-                    const SizedBox(height: 9),
-                    _RoleChip(
-                      icon: role == UserRole.patient
-                          ? Icons.monitor_heart_outlined
-                          : Icons.family_restroom_outlined,
-                      label: chipLabel,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _SelectionIndicator(selected: selected, label: roleLabel),
+              SizedBox(width: compact ? 10 : 12),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 23,
+                height: 23,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? _roleAccent : Colors.transparent,
+                  border: Border.all(
+                    color: selected ? _roleAccent : AppColor.border,
+                    width: 1.5,
+                  ),
+                ),
+                child: selected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      )
+                    : null,
+              ),
             ],
           ),
         ),
@@ -276,135 +331,71 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-class _RoleChip extends StatelessWidget {
-  const _RoleChip({required this.icon, required this.label});
+class _RoleMark extends StatelessWidget {
+  const _RoleMark({required this.role, required this.color});
 
-  final IconData icon;
-  final String label;
+  final UserRole role;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: 9,
-        vertical: 5,
-      ),
-      decoration: BoxDecoration(
-        color: AppColor.secondary,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: AppColor.textSecondary),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColor.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.1,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => CustomPaint(
+    size: const Size(30, 30),
+    painter: _RoleMarkPainter(role: role, color: color),
+  );
 }
 
-class _SelectionIndicator extends StatelessWidget {
-  const _SelectionIndicator({required this.selected, required this.label});
+class _RoleMarkPainter extends CustomPainter {
+  const _RoleMarkPainter({required this.role, required this.color});
 
-  final bool selected;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      checked: selected,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          color: selected ? AppColor.primary : AppColor.indicatorInactive,
-          shape: BoxShape.circle,
-        ),
-        child: selected
-            ? const Icon(Icons.check_rounded, color: Colors.white, size: 15)
-            : null,
-      ),
-    );
-  }
-}
-
-class _PrivacyBanner extends StatelessWidget {
-  const _PrivacyBanner({
-    required this.title,
-    required this.subtitle,
-    required this.compact,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool compact;
+  final UserRole role;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsetsDirectional.fromSTEB(
-        compact ? 12 : 14,
-        compact ? 10 : 12,
-        compact ? 12 : 14,
-        compact ? 10 : 12,
-      ),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceMuted,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.lock_outline_rounded,
-            size: compact ? 18 : 20,
-            color: AppColor.textSecondary,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: AppColor.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: AppColor.textSecondary,
-                    fontSize: 12,
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 30;
+    canvas.save();
+    canvas.scale(scale);
+    final line = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    if (role == UserRole.patient) {
+      final heart = Path()
+        ..moveTo(15, 26)
+        ..cubicTo(12, 23, 4, 17, 4, 10)
+        ..cubicTo(4, 3, 12, 2, 15, 8)
+        ..cubicTo(18, 2, 26, 3, 26, 10)
+        ..cubicTo(26, 17, 18, 23, 15, 26);
+      canvas.drawPath(heart, line);
+      final pulse = Path()
+        ..moveTo(7, 15)
+        ..lineTo(11, 15)
+        ..lineTo(13, 11)
+        ..lineTo(16, 19)
+        ..lineTo(18, 14)
+        ..lineTo(23, 14);
+      canvas.drawPath(pulse, line);
+    } else {
+      canvas.drawCircle(const Offset(10, 9), 3.1, line);
+      canvas.drawCircle(const Offset(20, 9), 3.1, line);
+      final leftPerson = Path()
+        ..moveTo(3, 24)
+        ..cubicTo(3, 19, 6, 16, 10, 16)
+        ..cubicTo(12, 16, 14, 17, 15, 20);
+      final rightPerson = Path()
+        ..moveTo(27, 24)
+        ..cubicTo(27, 19, 24, 16, 20, 16)
+        ..cubicTo(18, 16, 16, 17, 15, 20);
+      canvas.drawPath(leftPerson, line);
+      canvas.drawPath(rightPerson, line);
+    }
+    canvas.restore();
   }
+
+  @override
+  bool shouldRepaint(covariant _RoleMarkPainter oldDelegate) =>
+      oldDelegate.role != role || oldDelegate.color != color;
 }

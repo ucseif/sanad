@@ -6,6 +6,7 @@ class AppUser {
     required this.name,
     required this.email,
     required this.role,
+    this.phoneNumber,
     this.createdAt,
   });
 
@@ -13,6 +14,7 @@ class AppUser {
   final String name;
   final String email;
   final UserRole role;
+  final String? phoneNumber;
   final DateTime? createdAt;
 
   factory AppUser.fromFirestore({
@@ -42,6 +44,7 @@ class AppUser {
       name: name,
       email: email,
       role: userRoleFromString(data['role']),
+      phoneNumber: data['phoneNumber'] as String?,
       createdAt: createdAt,
     );
   }
@@ -52,6 +55,10 @@ class AppUser {
       'email': email,
       'role': role.value,
     };
+
+    if (phoneNumber != null && phoneNumber!.isNotEmpty) {
+      data['phoneNumber'] = phoneNumber;
+    }
 
     if (createdAt != null) {
       data['createdAt'] = createdAt;

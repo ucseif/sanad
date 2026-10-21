@@ -32,12 +32,19 @@ class AuthService {
     required String email,
     required String password,
     required UserRole role,
+    String? phoneNumber,
   }) async {
     final uid = await _authRepository.createAccount(
       email: email,
       password: password,
     );
-    final user = AppUser(uid: uid, name: name, email: email, role: role);
+    final user = AppUser(
+      uid: uid,
+      name: name,
+      email: email,
+      role: role,
+      phoneNumber: phoneNumber,
+    );
 
     try {
       await _userRepository.createUser(user);

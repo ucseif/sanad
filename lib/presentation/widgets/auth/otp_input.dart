@@ -162,7 +162,7 @@ class _OtpInputState extends State<OtpInput> {
                     return SizedBox(
                       key: ValueKey('otp-cell-$index'),
                       width: cellWidth,
-                      height: 50,
+                      height: 66,
                       child: CallbackShortcuts(
                         bindings: <ShortcutActivator, VoidCallback>{
                           const SingleActivator(
@@ -191,35 +191,35 @@ class _OtpInputState extends State<OtpInput> {
                             ],
                             style: const TextStyle(
                               color: AppColor.textPrimary,
-                              fontSize: 22,
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                             ),
                             decoration: InputDecoration(
                               counterText: '',
                               filled: true,
-                              fillColor: AppColor.surfaceMuted,
+                              fillColor: const Color(0xFFF9F9F9),
                               contentPadding: EdgeInsets.zero,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: AppColor.border,
+                                  color: Color(0xFFE5E5E5),
                                 ),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: AppColor.border,
+                                  color: Color(0xFFE5E5E5),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
-                                  color: AppColor.primary,
+                                  color: AppColor.textPrimary,
                                   width: 1.4,
                                 ),
                               ),
                               errorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 borderSide: const BorderSide(
                                   color: AppColor.alert,
                                 ),

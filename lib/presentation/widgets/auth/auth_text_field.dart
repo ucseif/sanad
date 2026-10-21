@@ -26,6 +26,9 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.labelAbove = false,
     this.compact = false,
+    this.surfaceColor,
+    this.outlineColor,
+    this.cornerRadius,
   });
 
   final TextEditingController controller;
@@ -48,6 +51,9 @@ class AuthTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool labelAbove;
   final bool compact;
+  final Color? surfaceColor;
+  final Color? outlineColor;
+  final double? cornerRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +81,7 @@ class AuthTextField extends StatelessWidget {
         suffixIcon: suffixIcon,
         counterText: '',
         filled: true,
-        fillColor: AppColor.surfaceMuted,
+        fillColor: surfaceColor ?? AppColor.surfaceMuted,
         isDense: compact,
         contentPadding: compact
             ? const EdgeInsetsDirectional.fromSTEB(16, 13, 16, 13)
@@ -94,25 +100,35 @@ class AuthTextField extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            cornerRadius ?? (compact ? 14 : 16),
+          ),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            cornerRadius ?? (compact ? 14 : 16),
+          ),
           borderSide: compact
               ? BorderSide.none
-              : const BorderSide(color: AppColor.border),
+              : BorderSide(color: outlineColor ?? AppColor.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            cornerRadius ?? (compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.primary, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            cornerRadius ?? (compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.alert),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            cornerRadius ?? (compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.alert, width: 1.4),
         ),
       ),
@@ -164,6 +180,9 @@ class AuthPasswordField extends StatefulWidget {
     this.labelAbove = false,
     this.compact = false,
     this.showLockIcon = false,
+    this.surfaceColor,
+    this.outlineColor,
+    this.cornerRadius,
   });
 
   final TextEditingController controller;
@@ -181,6 +200,9 @@ class AuthPasswordField extends StatefulWidget {
   final bool labelAbove;
   final bool compact;
   final bool showLockIcon;
+  final Color? surfaceColor;
+  final Color? outlineColor;
+  final double? cornerRadius;
 
   @override
   State<AuthPasswordField> createState() => _AuthPasswordFieldState();
@@ -230,7 +252,7 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
         errorMaxLines: 2,
         errorStyle: const TextStyle(fontSize: 12, height: 1.25),
         filled: true,
-        fillColor: AppColor.surfaceMuted,
+        fillColor: widget.surfaceColor ?? AppColor.surfaceMuted,
         isDense: widget.compact,
         contentPadding: widget.compact
             ? const EdgeInsetsDirectional.fromSTEB(16, 13, 6, 13)
@@ -244,25 +266,35 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
           fontWeight: FontWeight.w700,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            widget.cornerRadius ?? (widget.compact ? 14 : 16),
+          ),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            widget.cornerRadius ?? (widget.compact ? 14 : 16),
+          ),
           borderSide: widget.compact
               ? BorderSide.none
-              : const BorderSide(color: AppColor.border),
+              : BorderSide(color: widget.outlineColor ?? AppColor.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            widget.cornerRadius ?? (widget.compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.primary, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            widget.cornerRadius ?? (widget.compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.alert),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(widget.compact ? 14 : 16),
+          borderRadius: BorderRadius.circular(
+            widget.cornerRadius ?? (widget.compact ? 14 : 16),
+          ),
           borderSide: const BorderSide(color: AppColor.alert, width: 1.4),
         ),
         prefixIcon: widget.showLockIcon

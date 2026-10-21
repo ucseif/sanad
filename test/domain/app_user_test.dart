@@ -18,6 +18,7 @@ void main() {
         name: user.name,
         email: user.email,
         role: user.role,
+        phoneNumber: '+201012345678',
         createdAt: createdAt,
       );
 
@@ -25,6 +26,7 @@ void main() {
         'name': 'Amina Hassan',
         'email': 'amina@example.com',
         'role': 'patient',
+        'phoneNumber': '+201012345678',
         'createdAt': createdAt,
       });
       expect(user.toFirestore(), {

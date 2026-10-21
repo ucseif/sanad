@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../presentation/auth/auth_route_arguments.dart';
@@ -29,7 +30,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _passwordFocusNode = FocusNode();
-  String _countryCode = '+20';
+  String _countryCode = AppConstants.defaultCountryCallingCode;
   bool _termsAccepted = false;
   bool _passwordFocused = false;
   String? _nameError;
@@ -115,8 +116,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     Navigator.pushNamed(
       context,
-      AppRoutes.verificationMethod,
-      arguments: widget.arguments.copyWith(email: _emailController.text.trim()),
+      AppRoutes.otpVerification,
+      arguments: widget.arguments.copyWith(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        phoneNumber: AuthValidators.normalizedPhone(
+          _countryCode,
+          _phoneController.text,
+        ),
+      ),
     );
   }
 
@@ -347,8 +356,6 @@ class _PhoneField extends StatelessWidget {
   final ValueChanged<String> onCountryChanged;
   final ValueChanged<String> onChanged;
 
-  static const _countryCodes = ['+20', '+966', '+971', '+1', '+44'];
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -387,7 +394,7 @@ class _PhoneField extends StatelessWidget {
                       onChanged: (value) {
                         if (value != null) onCountryChanged(value);
                       },
-                      items: _countryCodes
+                      items: AppConstants.signUpCountryCallingCodes
                           .map(
                             (code) => DropdownMenuItem<String>(
                               value: code,

@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sanad/core/localization/app_localizations.dart';
 import 'package:sanad/core/theme/app_color.dart';
+import 'package:sanad/data/repositories/wexora_otp_repository.dart';
 import 'package:sanad/domain/models/user_role.dart';
 import 'package:sanad/presentation/auth/auth_route_arguments.dart';
 import 'package:sanad/presentation/screens/login_screen/login_screen.dart';
 import 'package:sanad/presentation/screens/otp_verification_screen/otp_verification_screen.dart';
 import 'package:sanad/presentation/screens/signup_screen/signup_screen.dart';
-import 'package:sanad/presentation/screens/verification_method_screen/verification_method_screen.dart';
 import 'package:sanad/utils/routes.dart';
 
 void main() {
@@ -52,7 +52,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('login validates empty and invalid email fields inline', (
+  testWidgets('login rejects invalid email and keeps the Oufa auth layout', (
     tester,
   ) async {
     await pumpAuthApp(
@@ -60,18 +60,16 @@ void main() {
       const LoginScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
     );
 
-    await tester.tap(find.byKey(const ValueKey('login-submit')));
-    await tester.pump();
-    expect(find.text('Email address is required.'), findsOneWidget);
-    expect(find.text('Password is required.'), findsOneWidget);
-
     await tester.enterText(
       find.byKey(const ValueKey('auth-email-field')),
       'not-an-email',
     );
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
-    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    expect(find.text('Enter a valid email address'), findsOneWidget);
+    expect(find.text('AR'), findsNothing);
+    expect(find.text('EN'), findsNothing);
+    expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsNothing);
   });
 
   testWidgets(
@@ -93,14 +91,10 @@ void main() {
         'NotConnected1!',
       );
       await tester.tap(find.byKey(const ValueKey('login-submit')));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
 
-      expect(
-        find.text(
-          'Sign-in will be connected later. No account session was created.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Preview only. No data was sent.'), findsOneWidget);
       expect(find.text('Welcome to SANAD'), findsNothing);
     },
   );
@@ -141,49 +135,45 @@ void main() {
     },
   );
 
-  testWidgets(
-    'returning to sign in reuses the existing login route and values',
-    (tester) async {
-      await pumpAuthApp(
-        tester,
-        const LoginScreen(
-          arguments: AuthRouteArguments(role: UserRole.patient),
-        ),
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('auth-email-field')),
-        'returning@example.com',
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('auth-password-field')),
-        'NotConnected1!',
-      );
-      await tester.tap(find.text('Create account'));
-      await tester.pumpAndSettle();
-      expect(find.byType(SignUpScreen), findsOneWidget);
+  testWidgets('signup is part of the copied auth flow and returns to login', (
+    tester,
+  ) async {
+    await pumpAuthApp(
+      tester,
+      const LoginScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('auth-email-field')),
+      'returning@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('auth-password-field')),
+      'NotConnected1!',
+    );
+    await tester.tap(find.text('Sign up'));
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome, Start with email'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Sign in').last);
-      await tester.tap(find.text('Sign in').last);
-      await tester.pumpAndSettle();
-      expect(find.byType(LoginScreen), findsOneWidget);
-      final emailField = find.descendant(
-        of: find.byKey(const ValueKey('auth-email-field')),
-        matching: find.byType(TextField),
-      );
-      final passwordField = find.descendant(
-        of: find.byKey(const ValueKey('auth-password-field')),
-        matching: find.byType(TextField),
-      );
-      expect(
-        tester.widget<TextField>(emailField).controller?.text,
-        'returning@example.com',
-      );
-      expect(
-        tester.widget<TextField>(passwordField).controller?.text,
-        'NotConnected1!',
-      );
-    },
-  );
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoginScreen), findsOneWidget);
+    final emailField = find.descendant(
+      of: find.byKey(const ValueKey('auth-email-field')),
+      matching: find.byType(TextField),
+    );
+    final passwordField = find.descendant(
+      of: find.byKey(const ValueKey('auth-password-field')),
+      matching: find.byType(TextField),
+    );
+    expect(
+      tester.widget<TextField>(emailField).controller?.text,
+      'returning@example.com',
+    );
+    expect(
+      tester.widget<TextField>(passwordField).controller?.text,
+      'NotConnected1!',
+    );
+  });
 
   testWidgets('short login keeps its primary action near the bottom', (
     tester,
@@ -211,10 +201,13 @@ void main() {
       tester,
       const LoginScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
     );
-    expect(tester.widget<Text>(find.text('Welcome back')).style?.fontSize, 26);
+    expect(
+      tester.widget<Text>(find.text('Log in to your account')).style?.fontSize,
+      30,
+    );
     expect(
       tester.getSize(find.byKey(const ValueKey('login-submit'))).height,
-      54,
+      58,
     );
     expect(
       tester
@@ -226,7 +219,7 @@ void main() {
           )
           .style
           ?.fontSize,
-      15,
+      16,
     );
 
     await pumpAuthApp(
@@ -265,26 +258,17 @@ void main() {
         'login-submit',
       ),
       (
-        const SignUpScreen(
-          arguments: AuthRouteArguments(role: UserRole.patient),
-        ),
+        SignUpScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
         'signup-submit',
-      ),
-      (
-        const VerificationMethodScreen(
-          arguments: AuthRouteArguments(
-            role: UserRole.patient,
-            email: 'sarah@gmail.com',
-          ),
-        ),
-        'verification-continue',
       ),
       (
         const OtpVerificationScreen(
           arguments: AuthRouteArguments(
             role: UserRole.patient,
             email: 'sarah@gmail.com',
+            phoneNumber: '+201012345678',
           ),
+          repository: _FakeOtpRepository(),
         ),
         'otp-verify-submit',
       ),
@@ -327,9 +311,7 @@ void main() {
 
       await pumpAuthApp(
         tester,
-        const SignUpScreen(
-          arguments: AuthRouteArguments(role: UserRole.patient),
-        ),
+        SignUpScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
       );
       final passwordField = find.byKey(const ValueKey('signup-password-field'));
       await tester.ensureVisible(passwordField);
@@ -390,9 +372,7 @@ void main() {
       final observer = _RecordingObserver();
       await pumpAuthApp(
         tester,
-        const SignUpScreen(
-          arguments: AuthRouteArguments(role: UserRole.patient),
-        ),
+        SignUpScreen(arguments: AuthRouteArguments(role: UserRole.patient)),
         observer: observer,
       );
       observer.lastPushed = null;
@@ -449,13 +429,33 @@ void main() {
       await tester.ensureVisible(find.byKey(const ValueKey('signup-submit')));
       await tester.tap(find.byKey(const ValueKey('signup-submit')));
       await tester.pumpAndSettle();
-      expect(observer.lastPushed?.settings.name, AppRoutes.verificationMethod);
+      expect(observer.lastPushed?.settings.name, AppRoutes.otpVerification);
       final arguments =
           observer.lastPushed?.settings.arguments as AuthRouteArguments;
       expect(arguments.role, UserRole.patient);
       expect(arguments.email, 'user@example.com');
+      expect(arguments.phoneNumber, '+201012345678');
     },
   );
+}
+
+class _FakeOtpRepository implements OtpVerificationRepository {
+  const _FakeOtpRepository();
+
+  @override
+  Future<OtpChallenge> sendCode({
+    required String phoneNumber,
+    required String language,
+  }) async => OtpChallenge(
+    id: 'otp-challenge-12345',
+    expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+  );
+
+  @override
+  Future<bool> verifyCode({
+    required String challengeId,
+    required String code,
+  }) async => false;
 }
 
 class _RecordingObserver extends NavigatorObserver {
