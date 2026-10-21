@@ -9,14 +9,13 @@ abstract final class AppConstants {
   static const String ppgSensor = 'PPG';
 
   static const String defaultCountryName = 'Egypt';
+  static const String defaultCountryCallingCode = '+20';
+  static const int defaultNationalNumberLength = 10;
   static const AppCountryConfig defaultCountry = AppCountryConfig(
-    callingCode: '+20',
-    nationalNumberLength: 10,
+    callingCode: defaultCountryCallingCode,
+    nationalNumberLength: defaultNationalNumberLength,
     flag: '🇪🇬',
   );
-  static const String defaultCountryCallingCode = defaultCountry.callingCode;
-  static const int defaultNationalNumberLength =
-      defaultCountry.nationalNumberLength;
   static const Map<String, AppCountryConfig> countries = {
     'Egypt': defaultCountry,
     'Saudi Arabia': AppCountryConfig(
