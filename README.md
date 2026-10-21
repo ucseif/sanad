@@ -104,11 +104,25 @@ sanad/
 │   │   │   │   └── onboarding_screen.dart
 │   │   │   ├── role_selection/
 │   │   │   │   └── role_selection_screen.dart
+│   │   │   ├── login_screen/
+│   │   │   │   └── login_screen.dart
+│   │   │   ├── signup_screen/
+│   │   │   │   └── signup_screen.dart
+│   │   │   ├── verification_method_screen/
+│   │   │   │   └── verification_method_screen.dart
+│   │   │   ├── otp_verification_screen/
+│   │   │   │   └── otp_verification_screen.dart
 │   │   │   └── home_screen/
 │   │   │       └── home_screen.dart
 │   │   └── widgets/
 │   │       ├── sanad_brand.dart
 │   │       ├── sanad_button.dart
+│   │       ├── auth/
+│   │       │   ├── auth_header.dart
+│   │       │   ├── auth_text_field.dart
+│   │       │   ├── password_requirements.dart
+│   │       │   ├── verification_method_card.dart
+│   │       │   └── otp_input.dart
 │   │       └── onboarding_illustrations.dart
 │   └── utils/
 │       └── routes.dart
@@ -150,8 +164,12 @@ LanguageScreen
 OnboardingScreen
     ↓  /role-selection
 RoleSelectionScreen
-    ↓  /home
-HomeScreen
+    ↓  /login
+LoginScreen ⇄ SignUpScreen
+    ↓  /verification-method
+VerificationMethodScreen
+    ↓  /otp-verification
+OTP presentation preview
 ```
 
 الـ routes يتم تعريفها وتشغيلها من خلال `lib/utils/routes.dart` باستخدام `onGenerateRoute`.
@@ -164,6 +182,10 @@ HomeScreen
 | `/language` | `LanguageScreen` | اختيار العربية أو الإنجليزية |
 | `/onboarding` | `OnboardingScreen` | شرح فكرة SANAD في 5 صفحات |
 | `/role-selection` | `RoleSelectionScreen` | اختيار Patient أو Caregiver |
+| `/login` | `LoginScreen` | واجهة تسجيل الدخول المحلية فقط |
+| `/signup` | `SignUpScreen` | واجهة إنشاء الحساب والتحقق المحلي فقط |
+| `/verification-method` | `VerificationMethodScreen` | اختيار طريقة التحقق في المعاينة |
+| `/otp-verification` | `OtpVerificationScreen` | واجهة OTP للمعاينة فقط |
 | `/home` | `HomeScreen` | الصفحة الرئيسية الحالية |
 
 ## Localization Flow
@@ -216,9 +238,11 @@ flowchart LR
 - تحويل `UserRole` من وإلى قيم Firestore.
 - تحويل `AppUser` إلى/from Firestore-compatible data.
 - رفض البيانات غير الصحيحة.
-- رحلة الـ UI من Splash إلى Language ثم Onboarding ثم Role Selection ثم Home.
+- رحلة الـ UI من Splash إلى Language ثم Onboarding ثم Role Selection ثم Auth UI.
 - تبديل RTL/LTR والـ fonts حسب اللغة.
 - اختبار أحجام شاشات موبايل مختلفة.
+- التحقق المحلي لنماذج المصادقة، متطلبات كلمة المرور، اختيار البريد الإلكتروني،
+  عدم توفر SMS، وإدخال OTP في المعاينة.
 
 لتشغيل الاختبارات:
 

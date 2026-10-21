@@ -4,6 +4,7 @@ import '../../../core/assets/app_assets.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../domain/models/user_role.dart';
+import '../../../presentation/auth/auth_route_arguments.dart';
 import '../../../presentation/widgets/sanad_button.dart';
 import '../../../utils/routes.dart';
 
@@ -25,7 +26,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 
   void _continue() {
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.login,
+      arguments: AuthRouteArguments(role: _selectedRole),
+    );
   }
 
   @override

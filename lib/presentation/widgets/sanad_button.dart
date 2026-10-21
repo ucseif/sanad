@@ -9,12 +9,14 @@ class SanadButton extends StatelessWidget {
     required this.onPressed,
     this.icon = Icons.arrow_forward_rounded,
     this.fontSize = 14,
+    this.height = 60,
   });
 
   final String label;
   final VoidCallback onPressed;
   final IconData icon;
   final double fontSize;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class SanadButton extends StatelessWidget {
         ? Icons.arrow_back_rounded
         : icon;
     return SizedBox(
-      height: 60,
+      height: height,
       width: double.infinity,
       child: FilledButton(
         onPressed: onPressed,

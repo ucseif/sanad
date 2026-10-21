@@ -5,10 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanad/core/localization/locale_controller.dart';
 import 'package:sanad/core/localization/locale_scope.dart';
 import 'package:sanad/main.dart';
+import 'package:sanad/domain/models/user_role.dart';
 import 'package:sanad/presentation/screens/language_screen/language_screen.dart';
 import 'package:sanad/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:sanad/presentation/screens/role_selection/role_selection_screen.dart';
-import 'package:sanad/presentation/screens/home_screen/home_screen.dart';
+import 'package:sanad/presentation/screens/login_screen/login_screen.dart';
 import 'package:sanad/presentation/widgets/sanad_button.dart';
 
 void main() {
@@ -121,7 +122,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(
+      tester.widget<LoginScreen>(find.byType(LoginScreen)).arguments.role,
+      UserRole.caregiver,
+    );
   });
 
   testWidgets('role screen renders role selection', (tester) async {
