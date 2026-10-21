@@ -11,7 +11,7 @@ import 'package:sanad/presentation/widgets/auth/otp_input.dart';
 import 'package:sanad/presentation/widgets/auth/password_requirements.dart';
 import 'package:sanad/presentation/widgets/auth/auth_text_field.dart';
 import 'package:sanad/presentation/widgets/auth/verification_method_card.dart';
-import 'package:sanad/presentation/widgets/sanad_button.dart';
+import 'package:sanad/presentation/widgets/shared_widgets/sanad_button.dart';
 
 void main() {
   Widget app(Widget child, {Locale locale = const Locale('en')}) {

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../../../application/auth/auth_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/theme/app_color.dart';
 import '../../../data/repositories/wexora_otp_repository.dart';
 import '../../../utils/routes.dart';
 import '../../../presentation/auth/auth_route_arguments.dart';
-import '../../../presentation/widgets/auth/otp_input.dart';
-import '../../../presentation/widgets/auth/sanad_auth_logo.dart';
+import '../../../presentation/widgets/otp_verification_screen_widgets/otp_verification_content.dart';
+import '../../../presentation/widgets/otp_verification_screen_widgets/otp_verification_header.dart';
+import '../../../presentation/widgets/otp_verification_screen_widgets/otp_verification_submit_button.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   const OtpVerificationScreen({
@@ -151,12 +153,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       'resource-exhausted' || 'rate-limited' => l10n.otpRateLimited,
       'invalid-argument' || 'invalid-code' => l10n.otpInvalidMessage,
       'not-found' => l10n.otpExpiredMessage,
-      'credentials-not-configured' => Localizations.localeOf(context).languageCode == 'ar'
-          ? 'بيانات Wexora غير مضبوطة للتجربة. أضف مفتاح API وSession ID عند تشغيل التطبيق.'
-          : 'Wexora credentials are missing. Provide the API key and session ID when running the app.',
-      'timeout' => Localizations.localeOf(context).languageCode == 'ar'
-          ? 'انتهت مهلة الاتصال بخدمة التحقق. تأكد من تشغيل خادم Wexora وحاول مجددًا.'
-          : 'The verification service timed out. Check that the Wexora proxy is running and try again.',
+      'credentials-not-configured' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'بيانات Wexora غير مضبوطة للتجربة. أضف مفتاح API وSession ID عند تشغيل التطبيق.'
+            : 'Wexora credentials are missing. Provide the API key and session ID when running the app.',
+      'timeout' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'انتهت مهلة الاتصال بخدمة التحقق. تأكد من تشغيل خادم Wexora وحاول مجددًا.'
+            : 'The verification service timed out. Check that the Wexora proxy is running and try again.',
       _ => l10n.otpServiceUnavailable,
     };
   }
@@ -175,7 +179,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     final isArabic = l10n.isArabic;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColor.surface,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -185,171 +189,53 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        tooltip: l10n.back,
-                        onPressed: () => Navigator.maybePop(context),
-                        icon: Icon(
-                          Directionality.of(context) == TextDirection.rtl
-                              ? Icons.arrow_forward_rounded
-                              : Icons.arrow_back_rounded,
-                        ),
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size(44, 44),
-                          foregroundColor: Colors.black,
-                        ),
-                      ),
-                      const Spacer(),
-                      const SanadAuthLogo(artworkWidth: 100),
-                      const Spacer(),
-                      const SizedBox(width: 44),
-                    ],
+                  OtpVerificationHeader(
+                    backLabel: l10n.back,
+                    onBack: () => Navigator.maybePop(context),
                   ),
                   const SizedBox(height: 24),
                   Expanded(
                     child: SingleChildScrollView(
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            l10n.otpTitle,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 30,
-                              height: 1.2,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -.5,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            isArabic
-                                ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر واتساب.'
-                                : 'Enter the 6-digit code sent to you on WhatsApp.',
-                            style: const TextStyle(
-                              color: Color(0xFF666666),
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.chat_bubble_outline_rounded,
-                                size: 21,
-                                color: Colors.black,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                isArabic ? 'واتساب' : 'WhatsApp',
-                                style: const TextStyle(
-                                  color: Color(0xFF666666),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                _maskedPhone(widget.arguments.phoneNumber),
-                                textDirection: TextDirection.ltr,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 36),
-                          Text(
-                            l10n.otpCodeLabel,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          OtpInput(
-                            key: ValueKey('otp-input-$_inputRevision'),
-                            errorText: _errorText,
-                            digitLabel: l10n.otpDigitLabel,
-                            onChanged: (value) => setState(() {
-                              _code = value;
-                              if (value.length == 6) _errorText = null;
-                            }),
-                          ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: TextButton(
-                              onPressed:
-                                  _sending ||
-                                      _busy ||
-                                      (_resendAt != null &&
-                                          DateTime.now().isBefore(_resendAt!))
-                                  ? null
-                                  : _sendCode,
-                              child: Text(_resendLabel(l10n)),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
+                      child: OtpVerificationContent(
+                        title: l10n.otpTitle,
+                        description: isArabic
+                            ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر واتساب.'
+                            : 'Enter the 6-digit code sent to you on WhatsApp.',
+                        whatsAppLabel: isArabic ? 'واتساب' : 'WhatsApp',
+                        phoneNumber: _maskedPhone(widget.arguments.phoneNumber),
+                        codeLabel: l10n.otpCodeLabel,
+                        inputKey: ValueKey('otp-input-$_inputRevision'),
+                        errorText: _errorText,
+                        digitLabel: l10n.otpDigitLabel,
+                        onCodeChanged: (value) => setState(() {
+                          _code = value;
+                          if (value.length == 6) _errorText = null;
+                        }),
+                        resendLabel: _resendLabel(l10n),
+                        canResend:
+                            !_sending &&
+                            !_busy &&
+                            (_resendAt == null ||
+                                !DateTime.now().isBefore(_resendAt!)),
+                        onResend: _sendCode,
+                        statusText:
                             _statusText ??
-                                (_sending
-                                    ? l10n.otpSendingMessage
-                                    : _expiresAt == null
-                                    ? l10n.otpSendingMessage
-                                    : l10n.otpExpiryMessage(_expiresAt!)),
-                            style: const TextStyle(
-                              color: Color(0xFF777777),
-                              fontSize: 13,
-                              height: 1.45,
-                            ),
-                          ),
-                        ],
+                            (_sending || _expiresAt == null
+                                ? l10n.otpSendingMessage
+                                : l10n.otpExpiryMessage(_expiresAt!)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 58,
-                    child: FilledButton(
-                      key: const ValueKey('otp-verify-submit'),
-                      onPressed: _busy || _sending || _verified
-                          ? null
-                          : _verify,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: _busy || _sending
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              _verified
-                                  ? l10n.otpVerifiedMessage
-                                  : l10n.verifyLabel,
-                            ),
-                    ),
+                  OtpVerificationSubmitButton(
+                    isBusy: _busy,
+                    isSending: _sending,
+                    isVerified: _verified,
+                    verifyLabel: l10n.verifyLabel,
+                    verifiedLabel: l10n.otpVerifiedMessage,
+                    onPressed: _verify,
                   ),
                 ],
               ),

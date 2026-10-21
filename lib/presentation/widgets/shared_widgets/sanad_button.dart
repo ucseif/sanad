@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_color.dart';
+import '../../../core/theme/app_color.dart';
 
 class SanadButton extends StatelessWidget {
   const SanadButton({
@@ -31,7 +31,7 @@ class SanadButton extends StatelessWidget {
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: AppColor.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColor.surface,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: const StadiumBorder(),
           elevation: 0,
