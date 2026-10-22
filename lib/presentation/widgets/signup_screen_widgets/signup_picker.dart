@@ -3,14 +3,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 
-class LoginScreenPicker extends StatelessWidget {
+class SignupPicker extends StatelessWidget {
   final String title;
   final List<String> items;
   final bool isArabic;
   final Function(String) onSelected;
-  const LoginScreenPicker({
+  const SignupPicker({
+    super.key,
     required this.title,
     required this.items,
     required this.isArabic,

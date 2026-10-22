@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 import 'login_screen_action_button.dart';
-import 'login_screen_input.dart';
-import 'login_screen_status_dots.dart';
+import '../shared_widgets/auth_form_input.dart';
+import '../shared_widgets/password_strength_dots.dart';
 
 class ResetPasswordForm extends StatelessWidget {
   final bool isArabic,
@@ -59,7 +59,7 @@ class ResetPasswordForm extends StatelessWidget {
           style: t(fontSize: 16, color: context.sanadDim, height: 1.5),
         ),
         const SizedBox(height: 40),
-        LoginScreenInput(
+        AuthFormInput(
           label: isArabic ? 'كلمة المرور' : 'Password',
           controller: pass,
           obscure: obscure,
@@ -72,13 +72,13 @@ class ResetPasswordForm extends StatelessWidget {
             ),
             onPressed: onToggleObscure,
           ),
-          extraLabel: LoginScreenStatusDots(
+          extraLabel: PasswordStrengthDots(
             status: [minLen, hasUpper, hasNum, hasSpec],
           ),
           hint: '********',
         ),
         const SizedBox(height: 20),
-        LoginScreenInput(
+        AuthFormInput(
           label: isArabic ? 'تأكيد كلمة المرور' : 'Confirm',
           controller: confirm,
           obscure: obscureConfirm,

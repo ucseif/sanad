@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 import 'login_screen_action_button.dart';
-import 'login_screen_input.dart';
+import '../shared_widgets/auth_form_input.dart';
 
 class ForgotPasswordForm extends StatelessWidget {
   final bool isArabic, loading;
@@ -44,7 +44,7 @@ class ForgotPasswordForm extends StatelessWidget {
           style: t(fontSize: 16, color: context.sanadDim, height: 1.5),
         ),
         const SizedBox(height: 40),
-        LoginScreenInput(
+        AuthFormInput(
           label: isArabic ? 'البريد الإلكتروني' : 'Email',
           controller: email,
           isArabic: isArabic,

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 import 'login_screen_action_button.dart';
-import 'login_screen_input.dart';
 
 class LoginOtpForm extends StatelessWidget {
   final bool isArabic, loading;

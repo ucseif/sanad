@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_color.dart';
-import 'login_screen_styles.dart';
+import 'auth_screen_styles.dart';
 
-class LoginScreenStatusDots extends StatelessWidget {
+class PasswordStrengthDots extends StatelessWidget {
   final List<bool> status;
-  const LoginScreenStatusDots({required this.status});
+  const PasswordStrengthDots({required this.status});
   @override
   Widget build(BuildContext context) {
     int metCount = status.where((e) => e).length;

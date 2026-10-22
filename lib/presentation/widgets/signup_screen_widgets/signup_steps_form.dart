@@ -3,26 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_color.dart';
+import '../../auth/validation/auth_validators.dart';
+import '../shared_widgets/auth_screen_styles.dart';
+import '../shared_widgets/auth_form_input.dart';
+import '../shared_widgets/password_strength_dots.dart';
 import '../shared_widgets/app_back_button.dart';
-import 'login_screen_styles.dart';
-import 'login_screen_action_button.dart';
-import 'login_screen_input.dart';
-import 'login_screen_input_formatters.dart';
-import 'login_screen_status_dots.dart';
+import 'signup_input_formatters.dart';
 
-class RegisterForm extends StatelessWidget {
+class SignupStepsForm extends StatelessWidget {
   final int regStep;
   final VoidCallback onStepNext, onStepBack;
   final bool isArabic,
-      loading,
       obscure,
       obscureConfirm,
       hasUpper,
       hasNum,
       hasSpec,
       hasMinLen,
-      passMatch,
-      agreeTerms;
+      passMatch;
   final String? selectedGov, selectedCountry, selectedCountryCode;
   final int expectedPhoneLength;
   final TextEditingController first,
@@ -34,23 +32,20 @@ class RegisterForm extends StatelessWidget {
       password,
       confirm;
   final bool usernameError, emailError;
-  final int usernameShake, emailShake;
-  final bool usernameChecking, emailChecking;
+  final bool usernameChecking;
   final String? usernameHint, emailHint;
-  final bool? usernameTaken, emailTaken;
-  final VoidCallback onToggle,
-      onToggleObscure,
+  final bool? usernameTaken, emailInvalid;
+  final VoidCallback onToggleObscure,
       onToggleConfirm,
       onGovTap,
       onCountryTap,
       onCountryCodeTap;
-  final Function(bool) onAgreeToggle;
-  const RegisterForm({
+  const SignupStepsForm({
+    super.key,
     required this.regStep,
     required this.onStepNext,
     required this.onStepBack,
     required this.isArabic,
-    required this.loading,
     required this.first,
     required this.last,
     required this.username,
@@ -59,13 +54,10 @@ class RegisterForm extends StatelessWidget {
     required this.address,
     required this.password,
     required this.confirm,
-    required this.onToggle,
     this.selectedGov,
     this.selectedCountry,
     this.selectedCountryCode,
     required this.expectedPhoneLength,
-    required this.agreeTerms,
-    required this.onAgreeToggle,
     required this.onToggleObscure,
     required this.onToggleConfirm,
     required this.onGovTap,
@@ -80,14 +72,11 @@ class RegisterForm extends StatelessWidget {
     required this.obscureConfirm,
     this.usernameError = false,
     this.emailError = false,
-    this.usernameShake = 0,
-    this.emailShake = 0,
     this.usernameChecking = false,
-    this.emailChecking = false,
     this.usernameHint,
     this.emailHint,
     this.usernameTaken,
-    this.emailTaken,
+    this.emailInvalid,
   });
 
   @override
@@ -106,13 +95,15 @@ class RegisterForm extends StatelessWidget {
       _ => '',
     };
     bool canNext = switch (regStep) {
-      0 => email.text.contains('@') && emailTaken == false,
-      1 => username.text.length >= 3 && usernameTaken == false,
-      2 => first.text.isNotEmpty && last.text.isNotEmpty,
-      3 => passMatch && hasMinLen,
+      0 =>
+        AuthValidators.validateEmail(email.text) == null &&
+            emailInvalid == false,
+      1 => username.text.length >= 4 && usernameTaken == false,
+      2 => first.text.trim().isNotEmpty && last.text.trim().isNotEmpty,
+      3 => passMatch && AuthValidators.validatePassword(password.text) == null,
       4 => phone.text.trim().length == expectedPhoneLength,
       5 => selectedCountry != null && selectedGov != null,
-      6 => address.text.isNotEmpty,
+      6 => address.text.trim().isNotEmpty,
       _ => false,
     };
 
@@ -189,10 +180,7 @@ class RegisterForm extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               layoutBuilder: (currentChild, previousChildren) => Stack(
                 alignment: AlignmentDirectional.topCenter,
-                children: [
-                  ...previousChildren,
-                  if (currentChild != null) currentChild,
-                ],
+                children: [...previousChildren, ?currentChild],
               ),
               child: _buildForm(context),
             ),
@@ -211,6 +199,7 @@ class RegisterForm extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               opacity: canNext ? 1.0 : 0.3,
               child: Container(
+                key: const ValueKey('signup-submit'),
                 width: double.infinity,
                 height: 58,
                 decoration: BoxDecoration(
@@ -253,26 +242,28 @@ class RegisterForm extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           switch (regStep) {
-            0 => LoginScreenInput(
+            0 => AuthFormInput(
+              inputKey: const ValueKey('signup-email-field'),
               label: isArabic ? 'البريد' : 'Email',
               controller: email,
               isArabic: isArabic,
               icon: Icons.mail_outline_rounded,
               error: emailError,
               helperText: emailHint,
-              helperColor: emailTaken == true
+              helperColor: emailInvalid == true
                   ? AppColor.loginError
                   : AppColor.loginAvailable,
               hint: 'example@email.com',
             ),
-            1 => LoginScreenInput(
+            1 => AuthFormInput(
+              inputKey: const ValueKey('signup-username-field'),
               label: isArabic ? 'اسم المستخدم' : 'Username',
               controller: username,
               isArabic: isArabic,
               icon: Icons.alternate_email_rounded,
-              error: usernameError,
+              error: usernameError || usernameTaken == true,
               helperText: usernameHint,
-              helperColor: usernameTaken == true
+              helperColor: usernameError || usernameTaken == true
                   ? AppColor.loginError
                   : AppColor.loginAvailable,
               suffix: usernameChecking
@@ -292,7 +283,8 @@ class RegisterForm extends StatelessWidget {
             ),
             2 => Column(
               children: [
-                LoginScreenInput(
+                AuthFormInput(
+                  inputKey: const ValueKey('signup-first-name-field'),
                   label: isArabic ? 'الاسم الأول' : 'First Name',
                   controller: first,
                   isArabic: isArabic,
@@ -300,7 +292,8 @@ class RegisterForm extends StatelessWidget {
                   hint: 'Ahmed',
                 ),
                 const SizedBox(height: 20),
-                LoginScreenInput(
+                AuthFormInput(
+                  inputKey: const ValueKey('signup-last-name-field'),
                   label: isArabic ? 'الاسم الأخير' : 'Last Name',
                   controller: last,
                   isArabic: isArabic,
@@ -311,7 +304,8 @@ class RegisterForm extends StatelessWidget {
             ),
             3 => Column(
               children: [
-                LoginScreenInput(
+                AuthFormInput(
+                  inputKey: const ValueKey('signup-password-field'),
                   label: isArabic ? 'كلمة المرور' : 'Password',
                   controller: password,
                   obscure: obscure,
@@ -325,13 +319,14 @@ class RegisterForm extends StatelessWidget {
                     ),
                     onPressed: onToggleObscure,
                   ),
-                  extraLabel: LoginScreenStatusDots(
+                  extraLabel: PasswordStrengthDots(
                     status: [hasMinLen, hasUpper, hasNum, hasSpec],
                   ),
                   hint: '********',
                 ),
                 const SizedBox(height: 20),
-                LoginScreenInput(
+                AuthFormInput(
+                  inputKey: const ValueKey('signup-confirm-password-field'),
                   label: isArabic ? 'التأكيد' : 'Confirm',
                   controller: confirm,
                   obscure: obscureConfirm,
@@ -349,7 +344,8 @@ class RegisterForm extends StatelessWidget {
                 ),
               ],
             ),
-            4 => LoginScreenInput(
+            4 => AuthFormInput(
+              inputKey: const ValueKey('signup-phone-field'),
               label: isArabic ? 'رقم الهاتف' : 'Phone',
               controller: phone,
               isArabic: isArabic,
@@ -393,7 +389,8 @@ class RegisterForm extends StatelessWidget {
                 GestureDetector(
                   onTap: onCountryTap,
                   child: AbsorbPointer(
-                    child: LoginScreenInput(
+                    child: AuthFormInput(
+                      inputKey: const ValueKey('signup-country-field'),
                       label: isArabic ? 'الدولة' : 'Country',
                       controller: TextEditingController(text: selectedCountry),
                       isArabic: isArabic,
@@ -406,7 +403,8 @@ class RegisterForm extends StatelessWidget {
                 GestureDetector(
                   onTap: onGovTap,
                   child: AbsorbPointer(
-                    child: LoginScreenInput(
+                    child: AuthFormInput(
+                      inputKey: const ValueKey('signup-region-field'),
                       label: isArabic ? 'المنطقة' : 'Area',
                       controller: TextEditingController(text: selectedGov),
                       isArabic: isArabic,
@@ -417,7 +415,8 @@ class RegisterForm extends StatelessWidget {
                 ),
               ],
             ),
-            6 => LoginScreenInput(
+            6 => AuthFormInput(
+              inputKey: const ValueKey('signup-address-field'),
               label: isArabic ? 'العنوان' : 'Address',
               controller: address,
               isArabic: isArabic,

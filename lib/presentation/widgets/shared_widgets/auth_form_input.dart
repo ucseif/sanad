@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_color.dart';
-import 'login_screen_styles.dart';
+import 'auth_screen_styles.dart';
 
-class LoginScreenInput extends StatelessWidget {
+class AuthFormInput extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool obscure, isArabic;
@@ -18,7 +18,7 @@ class LoginScreenInput extends StatelessWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
-  const LoginScreenInput({
+  const AuthFormInput({
     this.inputKey,
     required this.label,
     required this.controller,

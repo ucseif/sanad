@@ -142,7 +142,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.arrow_forward_rounded), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                'assets/images/back_to_right.png',
+      ),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('شعار سند'), findsOneWidget);
   });
 

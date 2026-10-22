@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 import 'login_screen_action_button.dart';
-import 'login_screen_input.dart';
+import '../shared_widgets/auth_form_input.dart';
 
 class LoginForm extends StatelessWidget {
   final bool isArabic, loading, obscure;
@@ -65,12 +65,10 @@ class LoginForm extends StatelessWidget {
           SizedBox(height: isKeyboardVisible ? 20 : 40),
           Expanded(
             child: SingleChildScrollView(
-              physics: isKeyboardVisible
-                  ? const AlwaysScrollableScrollPhysics()
-                  : const NeverScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  LoginScreenInput(
+                  AuthFormInput(
                     label: isArabic ? 'البريد الإلكتروني' : 'Email',
                     controller: username,
                     isArabic: isArabic,
@@ -81,7 +79,7 @@ class LoginForm extends StatelessWidget {
                     hint: isArabic ? 'أدخل بريدك الإلكتروني' : 'you@email.com',
                   ),
                   const SizedBox(height: 24),
-                  LoginScreenInput(
+                  AuthFormInput(
                     label: isArabic ? 'كلمة المرور' : 'Password',
                     controller: password,
                     obscure: obscure,

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../application/auth/auth_failure.dart';
 import '../../../application/auth/auth_service.dart';
+import '../../../application/auth/auth_service_exception.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../data/repositories/wexora_otp_repository.dart';
@@ -17,12 +19,14 @@ class OtpVerificationScreen extends StatefulWidget {
     super.key,
     required this.arguments,
     this.repository,
+    this.authService,
   });
 
   static const routeName = '/otp-verification';
 
   final AuthRouteArguments arguments;
   final OtpVerificationRepository? repository;
+  final AuthService? authService;
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -32,6 +36,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String _code = '';
   String? _errorText;
   late final _otpRepository = widget.repository ?? WexoraOtpRepository();
+  late final _authService = widget.authService ?? AuthService.firebase();
   bool _busy = false;
   bool _sending = false;
   bool _verified = false;
@@ -122,17 +127,21 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       final args = widget.arguments;
-      if (args.email == null || args.password == null || args.name == null) {
+      final registration = args.registrationData;
+      if (registration == null &&
+          args.email == null &&
+          args.password == null &&
+          args.name == null) {
         if (mounted) setState(() => _verified = true);
         return;
       }
-      await AuthService.firebase().register(
-        name: args.name!,
-        email: args.email!,
-        password: args.password!,
-        role: args.role,
-        phoneNumber: args.phoneNumber,
-      );
+      if (registration == null) {
+        if (mounted) {
+          setState(() => _errorText = l10n.authProfileIncomplete);
+        }
+        return;
+      }
+      await _authService.register(registration);
       if (!mounted) return;
       setState(() => _verified = true);
       Navigator.of(
@@ -140,6 +149,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       ).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
     } on WexoraOtpException catch (error) {
       if (mounted) setState(() => _errorText = _localizedError(error.code));
+    } on AuthFailure catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = switch (error.type) {
+          AuthFailureType.emailAlreadyInUse =>
+            context.l10n.authEmailAlreadyUsed,
+          AuthFailureType.network => context.l10n.authNetworkError,
+          _ => context.l10n.authGenericError,
+        };
+      });
+    } on AuthServiceException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = error.type == AuthServiceFailureType.usernameTaken
+            ? context.l10n.authUsernameTaken
+            : context.l10n.authGenericError;
+      });
     } catch (_) {
       if (mounted) setState(() => _errorText = l10n.otpServiceUnavailable);
     } finally {

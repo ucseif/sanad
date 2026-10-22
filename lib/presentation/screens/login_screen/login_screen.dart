@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/constants/app_constants.dart';
+import '../../../application/auth/auth_failure.dart';
+import '../../../application/auth/auth_service.dart';
+import '../../../application/auth/auth_service_exception.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../presentation/auth/auth_route_arguments.dart';
@@ -12,21 +14,20 @@ import '../../../presentation/widgets/auth/sanad_auth_logo.dart';
 import '../../../utils/routes.dart';
 import '../../widgets/login_screen_widgets/forgot_password_form.dart';
 import '../../widgets/login_screen_widgets/login_footer_links.dart';
-import '../../widgets/login_screen_widgets/login_screen_styles.dart';
+import '../../widgets/shared_widgets/auth_screen_styles.dart';
 import '../../widgets/login_screen_widgets/login_form.dart';
 import '../../widgets/login_screen_widgets/login_otp_form.dart';
-import '../../widgets/login_screen_widgets/login_screen_picker.dart';
-import '../../widgets/login_screen_widgets/register_form.dart';
 import '../../widgets/login_screen_widgets/reset_password_form.dart';
 
-enum _AuthView { login, register, otpVerify, forgotPassword, resetNewPassword }
+enum _AuthView { login, otpVerify, forgotPassword, resetNewPassword }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.arguments});
+  const LoginScreen({super.key, required this.arguments, this.authService});
 
   static const routeName = '/login';
 
   final AuthRouteArguments arguments;
+  final AuthService? authService;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -35,7 +36,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   _AuthView _view = _AuthView.login;
-  int _regStep = 0;
   bool _loading = false;
   String? _error;
   bool _isArabic = false;
@@ -59,43 +59,9 @@ class _LoginScreenState extends State<LoginScreen>
     (_) => TextEditingController(),
   );
 
-  final _regFirst = TextEditingController();
-  final _regLast = TextEditingController();
-  final _regUsername = TextEditingController();
-  final _regEmail = TextEditingController();
-  final _regPhone = TextEditingController();
-  final _regAddress = TextEditingController();
-  final _regPassword = TextEditingController();
-  final _regConfirm = TextEditingController();
-
-  String _selectedCountry = AppConstants.defaultCountryName;
-  String _selectedCountryCode = AppConstants.defaultCountryCallingCode;
-  int _expectedPhoneLength = AppConstants.defaultNationalNumberLength;
-  String? _selectedGovernorate;
-  bool _agreeTerms = true;
-
-  bool _obscureLogin = true, _obscureReg = true, _obscureConfirm = true;
-  int _loginUserShake = 0,
-      _loginPassShake = 0,
-      _regUserShake = 0,
-      _regEmailShake = 0,
-      _forgotEmailShake = 0;
-  bool _loginUserErr = false,
-      _loginPassErr = false,
-      _regUserErr = false,
-      _regEmailErr = false,
-      _forgotEmailErr = false;
-
-  Timer? _checkUserDebounce, _checkEmailDebounce;
-  bool _checkingUsername = false, _checkingEmail = false;
-  bool? _usernameTaken, _emailTaken;
-  String? _usernameHint, _emailHint;
-
-  bool _hasUpper = false,
-      _hasNumber = false,
-      _hasSpecial = false,
-      _hasMinLen = false,
-      _passMatch = false;
+  bool _obscureLogin = true, _obscureReset = true, _obscureResetConfirm = true;
+  int _loginUserShake = 0, _loginPassShake = 0, _forgotEmailShake = 0;
+  bool _loginUserErr = false, _loginPassErr = false, _forgotEmailErr = false;
   bool _resetHasUpper = false,
       _resetHasNumber = false,
       _resetHasSpecial = false,
@@ -128,12 +94,8 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         );
     _animController.forward();
-    _regPassword.addListener(_validatePassword);
-    _regConfirm.addListener(_validatePassword);
     _resetNewPass.addListener(_validateResetPassword);
     _resetNewConfirm.addListener(_validateResetPassword);
-    _regUsername.addListener(_onUsernameChanged);
-    _regEmail.addListener(_onEmailChanged);
   }
 
   @override
@@ -143,17 +105,6 @@ class _LoginScreenState extends State<LoginScreen>
       _isArabic = context.l10n.isArabic;
       _localeInitialized = true;
     }
-  }
-
-  void _validatePassword() {
-    final pass = _regPassword.text;
-    setState(() {
-      _hasMinLen = pass.length >= 8;
-      _hasUpper = pass.contains(RegExp(r'[A-Z]'));
-      _hasNumber = pass.contains(RegExp(r'[0-9]'));
-      _hasSpecial = pass.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-      _passMatch = pass.isNotEmpty && pass == _regConfirm.text;
-    });
   }
 
   void _validateResetPassword() {
@@ -167,82 +118,17 @@ class _LoginScreenState extends State<LoginScreen>
     });
   }
 
-  void _onUsernameChanged() {
-    final v = _regUsername.text.trim();
-    _checkUserDebounce?.cancel();
-    setState(() {
-      _usernameTaken = null;
-      _usernameHint = null;
-      _checkingUsername = v.isNotEmpty;
-      _regUserErr = false;
-    });
-    if (v.length < 3) {
-      if (v.isNotEmpty)
-        setState(() {
-          _checkingUsername = false;
-        });
-      return;
-    }
-    _checkUserDebounce = Timer(const Duration(milliseconds: 450), () {
-      if (!mounted || _regUsername.text.trim() != v) return;
-      setState(() {
-        _checkingUsername = false;
-        _usernameTaken = false;
-        _usernameHint = _isArabic ? 'متاح للمعاينة' : 'Available for preview';
-      });
-    });
-  }
-
-  void _onEmailChanged() {
-    final v = _regEmail.text.trim();
-    _checkEmailDebounce?.cancel();
-    setState(() {
-      _emailTaken = null;
-      _emailHint = null;
-      _checkingEmail = v.isNotEmpty;
-      _regEmailErr = false;
-    });
-    bool isComplete =
-        v.contains('.') && v.substring(v.lastIndexOf('.')).length >= 3;
-    if (!isComplete) {
-      setState(() => _checkingEmail = false);
-      return;
-    }
-    _checkEmailDebounce = Timer(const Duration(milliseconds: 450), () {
-      if (!mounted || _regEmail.text.trim() != v) return;
-      final valid =
-          v.contains('@') && v.substring(v.lastIndexOf('.')).length >= 3;
-      setState(() {
-        _checkingEmail = false;
-        _emailTaken = !valid;
-        _emailHint = valid
-            ? (_isArabic ? 'صالح للمعاينة' : 'Valid for preview')
-            : (_isArabic ? 'تحقق من البريد' : 'Check the email');
-      });
-    });
-  }
-
   @override
   void dispose() {
     _toastTimer?.cancel();
     _toastEntry?.remove();
     _resendTimer?.cancel();
-    _checkUserDebounce?.cancel();
-    _checkEmailDebounce?.cancel();
     _loginUsername.dispose();
     _loginPassword.dispose();
     _otpCode.dispose();
     _forgotEmail.dispose();
     _resetNewPass.dispose();
     _resetNewConfirm.dispose();
-    _regFirst.dispose();
-    _regLast.dispose();
-    _regUsername.dispose();
-    _regEmail.dispose();
-    _regPhone.dispose();
-    _regAddress.dispose();
-    _regPassword.dispose();
-    _regConfirm.dispose();
     for (final c in _otpDigits) c.dispose();
     for (final f in _otpFocus) f.dispose();
     _animController.dispose();
@@ -340,26 +226,58 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() {
       _error = null;
       _view = view;
-      _regStep = 0;
     });
+  }
+
+  Future<void> _signIn() async {
+    if (_loading) return;
+    final email = _loginUsername.text.trim();
+    final validEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
+    if (!validEmail || _loginPassword.text.isEmpty) {
+      _showToast(
+        !validEmail
+            ? (_isArabic
+                  ? 'أدخل بريدًا إلكترونيًا صحيحًا'
+                  : 'Enter a valid email address')
+            : (_isArabic ? 'أدخل كلمة المرور' : 'Enter your password'),
+        success: false,
+      );
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await (widget.authService ?? AuthService.firebase()).signIn(
+        email: email,
+        password: _loginPassword.text,
+      );
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
+    } on AuthFailure catch (error) {
+      if (!mounted) return;
+      final message = switch (error.type) {
+        AuthFailureType.invalidCredentials ||
+        AuthFailureType.invalidEmail => context.l10n.authInvalidCredentials,
+        AuthFailureType.network => context.l10n.authNetworkError,
+        _ => context.l10n.authGenericError,
+      };
+      _showToast(message, success: false);
+    } on AuthServiceException {
+      if (mounted) _showToast(context.l10n.authGenericError, success: false);
+    } catch (_) {
+      if (mounted) _showToast(context.l10n.authGenericError, success: false);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   void _demoAction(String action, {String? email}) {
     if (_loading) return;
-    if (action == 'register') {
-      Navigator.pushNamed(
-        context,
-        AppRoutes.otpVerification,
-        arguments: widget.arguments.copyWith(
-          email: _regEmail.text.trim(),
-          name: '${_regFirst.text.trim()} ${_regLast.text.trim()}'.trim(),
-          password: _regPassword.text,
-          phoneNumber:
-              '$_selectedCountryCode${_regPhone.text.replaceAll(RegExp(r'\D'), '')}',
-        ),
-      );
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
@@ -367,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen>
     Future<void>.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       setState(() => _loading = false);
-      if (action == 'login' || action == 'register') {
+      if (action == 'login') {
         _showToast(
           _isArabic
               ? 'واجهة تجريبية فقط، لم يتم إرسال البيانات'
@@ -377,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen>
       } else if (action == 'forgot_request' || action == 'verify_otp') {
         setState(() {
           _otpPurpose = action == 'forgot_request' ? 'reset' : 'login';
-          _otpEmailMasked = email ?? _regEmail.text;
+          _otpEmailMasked = email ?? _loginUsername.text;
         });
         _clearOtpInputs();
         _startResendTimer();
@@ -392,80 +310,6 @@ class _LoginScreenState extends State<LoginScreen>
         _go(_AuthView.login);
       }
     });
-  }
-
-  void _showGovPicker() {
-    final list = _isArabic
-        ? AppConstants.governoratesArByCountry[_selectedCountry]
-        : AppConstants.governoratesEnByCountry[_selectedCountry];
-    if (list == null) return;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColor.transparent,
-      isScrollControlled: true,
-      builder: (_) => LoginScreenPicker(
-        title: _isArabic ? 'اختر المنطقة' : 'Select Area',
-        items: list,
-        isArabic: _isArabic,
-        onSelected: (v) => setState(() => _selectedGovernorate = v),
-      ),
-    );
-  }
-
-  void _showCountryPicker() {
-    final list = AppConstants.countries.entries
-        .map((entry) => '${entry.value.flag} ${entry.key}')
-        .toList();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColor.transparent,
-      isScrollControlled: true,
-      builder: (_) => LoginScreenPicker(
-        title: _isArabic ? 'اختر الدولة' : 'Select Country',
-        items: list,
-        isArabic: _isArabic,
-        onSelected: (v) {
-          final name = v.split(' ').sublist(1).join(' ');
-          setState(() {
-            _selectedCountry = name;
-            final country = AppConstants.countries[name]!;
-            _selectedCountryCode = country.callingCode;
-            _expectedPhoneLength = country.nationalNumberLength;
-            _regPhone.clear();
-            _selectedGovernorate = null;
-          });
-        },
-      ),
-    );
-  }
-
-  void _showCountryCodePicker() {
-    final list = AppConstants.countries.values
-        .map((country) => '${country.flag} ${country.callingCode}')
-        .toList();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColor.transparent,
-      isScrollControlled: true,
-      builder: (_) => LoginScreenPicker(
-        title: _isArabic ? 'كود الدولة' : 'Country Code',
-        items: list,
-        isArabic: _isArabic,
-        onSelected: (v) {
-          final code = v.split(' ')[1];
-          final entry = AppConstants.countries.entries.firstWhere(
-            (entry) => entry.value.callingCode == code,
-          );
-          final name = entry.key;
-          setState(() {
-            _selectedCountryCode = code;
-            _selectedCountry = name;
-            _expectedPhoneLength = entry.value.nationalNumberLength;
-            _regPhone.clear();
-          });
-        },
-      ),
-    );
   }
 
   Widget _buildBrandHeader(BuildContext context) {
@@ -524,14 +368,8 @@ class _LoginScreenState extends State<LoginScreen>
           child: PopScope(
             canPop: _view == _AuthView.login,
             onPopInvokedWithResult: (didPop, result) {
-              if (didPop) return;
-              if (_view == _AuthView.register && _regStep > 0)
-                setState(() => _regStep--);
-              // Block back on OTP
-              else if (_view == _AuthView.otpVerify)
-                return;
-              else
-                _go(_AuthView.login);
+              if (didPop || _view == _AuthView.otpVerify) return;
+              _go(_AuthView.login);
             },
             child: Scaffold(
               backgroundColor: context.sanadBg,
@@ -578,88 +416,13 @@ class _LoginScreenState extends State<LoginScreen>
                                 onToggleObscure: () => setState(
                                   () => _obscureLogin = !_obscureLogin,
                                 ),
-                                onToggle: () => _go(_AuthView.register),
-                                onForgot: () => _go(_AuthView.forgotPassword),
-                                onSubmit: () {
-                                  final email = _loginUsername.text.trim();
-                                  final validEmail = RegExp(
-                                    r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                                  ).hasMatch(email);
-                                  if (!validEmail ||
-                                      _loginPassword.text.isEmpty) {
-                                    _showToast(
-                                      !validEmail
-                                          ? (_isArabic
-                                                ? 'أدخل بريدًا إلكترونيًا صحيحًا'
-                                                : 'Enter a valid email address')
-                                          : (_isArabic
-                                                ? 'أدخل كلمة المرور'
-                                                : 'Enter your password'),
-                                      success: false,
-                                    );
-                                    return;
-                                  }
-                                  _demoAction('login');
-                                },
-                              ),
-                              _AuthView.register => RegisterForm(
-                                regStep: _regStep,
-                                isArabic: _isArabic,
-                                loading: _loading,
-                                first: _regFirst,
-                                last: _regLast,
-                                username: _regUsername,
-                                email: _regEmail,
-                                phone: _regPhone,
-                                address: _regAddress,
-                                password: _regPassword,
-                                confirm: _regConfirm,
-                                selectedGov: _selectedGovernorate,
-                                selectedCountry: _selectedCountry,
-                                selectedCountryCode: _selectedCountryCode,
-                                expectedPhoneLength: _expectedPhoneLength,
-                                agreeTerms: _agreeTerms,
-                                onStepNext: () {
-                                  if (_regStep < 6)
-                                    setState(() => _regStep++);
-                                  else {
-                                    _demoAction('register');
-                                  }
-                                },
-                                onStepBack: () {
-                                  if (_regStep > 0)
-                                    setState(() => _regStep--);
-                                  else
-                                    _go(_AuthView.login);
-                                },
-                                onAgreeToggle: (v) =>
-                                    setState(() => _agreeTerms = v),
-                                onToggleObscure: () =>
-                                    setState(() => _obscureReg = !_obscureReg),
-                                onToggleConfirm: () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm,
+                                onToggle: () => Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.signup,
+                                  arguments: widget.arguments,
                                 ),
-                                onGovTap: _showGovPicker,
-                                onCountryTap: _showCountryPicker,
-                                onCountryCodeTap: _showCountryCodePicker,
-                                onToggle: () => _go(_AuthView.login),
-                                usernameError: _regUserErr,
-                                emailError: _regEmailErr,
-                                usernameShake: _regUserShake,
-                                emailShake: _regEmailShake,
-                                usernameChecking: _checkingUsername,
-                                emailChecking: _checkingEmail,
-                                usernameHint: _usernameHint,
-                                emailHint: _emailHint,
-                                usernameTaken: _usernameTaken,
-                                emailTaken: _emailTaken,
-                                obscure: _obscureReg,
-                                obscureConfirm: _obscureConfirm,
-                                hasUpper: _hasUpper,
-                                hasNum: _hasNumber,
-                                hasSpec: _hasSpecial,
-                                hasMinLen: _hasMinLen,
-                                passMatch: _passMatch,
+                                onForgot: () => _go(_AuthView.forgotPassword),
+                                onSubmit: _signIn,
                               ),
                               _AuthView.otpVerify => LoginOtpForm(
                                 isArabic: _isArabic,
@@ -719,18 +482,19 @@ class _LoginScreenState extends State<LoginScreen>
                                     loading: _loading,
                                     pass: _resetNewPass,
                                     confirm: _resetNewConfirm,
-                                    obscure: _obscureReg,
-                                    obscureConfirm: _obscureConfirm,
+                                    obscure: _obscureReset,
+                                    obscureConfirm: _obscureResetConfirm,
                                     minLen: _resetMinLen,
                                     hasUpper: _resetHasUpper,
                                     hasNum: _resetHasNumber,
                                     hasSpec: _resetHasSpecial,
                                     passMatch: _resetPassMatch,
                                     onToggleObscure: () => setState(
-                                      () => _obscureReg = !_obscureReg,
+                                      () => _obscureReset = !_obscureReset,
                                     ),
                                     onToggleConfirm: () => setState(
-                                      () => _obscureConfirm = !_obscureConfirm,
+                                      () => _obscureResetConfirm =
+                                          !_obscureResetConfirm,
                                     ),
                                     onBack: () => _go(_AuthView.login),
                                     onSubmit: () =>

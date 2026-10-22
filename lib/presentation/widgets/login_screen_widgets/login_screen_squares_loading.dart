@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'login_screen_styles.dart';
+import '../shared_widgets/auth_screen_styles.dart';
 
 class LoginScreenSquaresLoading extends StatefulWidget {
   final Color? color;

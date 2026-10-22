@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_color.dart';
 
-extension LoginScreenBuildContextX on BuildContext {
+extension AuthScreenBuildContextX on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get sanadBg =>
       isDark ? AppColor.loginDarkBackground : AppColor.loginLightBackground;

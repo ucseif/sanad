@@ -52,9 +52,7 @@ class WexoraOtpRepository implements OtpVerificationRepository {
     required String challengeId,
     required String code,
   }) async {
-    final data = await _post('/otp/$challengeId/verify', {
-      'code': code,
-    });
+    final data = await _post('/otp/$challengeId/verify', {'code': code});
     return data['verified'] == true;
   }
 
@@ -67,9 +65,10 @@ class WexoraOtpRepository implements OtpVerificationRepository {
     }
 
     try {
-      return await _sendAndRead(Uri.parse('$_apiBaseUrl$path'), body).timeout(
-        const Duration(seconds: 20),
-      );
+      return await _sendAndRead(
+        Uri.parse('$_apiBaseUrl$path'),
+        body,
+      ).timeout(const Duration(seconds: 20));
     } on WexoraOtpException {
       rethrow;
     } on TimeoutException {
@@ -85,7 +84,8 @@ class WexoraOtpRepository implements OtpVerificationRepository {
 
   DateTime? _parseWexoraDate(String? value) {
     if (value == null) return null;
-    return DateTime.tryParse(value) ?? DateTime.tryParse('${value.replaceFirst(' ', 'T')}Z');
+    return DateTime.tryParse(value) ??
+        DateTime.tryParse('${value.replaceFirst(' ', 'T')}Z');
   }
 
   Future<Map<String, dynamic>> _sendAndRead(
