@@ -161,6 +161,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 onPressed: _continue,
                 icon: null,
                 fontSize: 16,
+                cornerRadius: 14,
               ),
             ],
           ),

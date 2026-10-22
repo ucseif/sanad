@@ -231,43 +231,47 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
                               ],
                             ),
                             const SizedBox(height: 7),
-                            Row(
-                              textDirection: TextDirection.ltr,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                AnimatedSwitcher(
-                                  key: const ValueKey('watch-bpm'),
-                                  duration: reduced
-                                      ? Duration.zero
-                                      : const Duration(milliseconds: 180),
-                                  child: Text(
-                                    '$bpm',
-                                    key: ValueKey(bpm),
-                                    style: const TextStyle(
-                                      color: AppColor.onboardingInk,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1,
-                                      letterSpacing: -1.2,
-                                      fontFeatures: [
-                                        FontFeature.tabularFigures(),
-                                      ],
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Row(
+                                textDirection: TextDirection.ltr,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  AnimatedSwitcher(
+                                    key: const ValueKey('watch-bpm'),
+                                    duration: reduced
+                                        ? Duration.zero
+                                        : const Duration(milliseconds: 180),
+                                    child: Text(
+                                      '$bpm',
+                                      key: ValueKey(bpm),
+                                      style: const TextStyle(
+                                        color: AppColor.onboardingInk,
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1,
+                                        letterSpacing: -1.2,
+                                        fontFeatures: [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 5),
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 4),
-                                  child: Text(
-                                    'BPM',
-                                    style: TextStyle(
-                                      color: AppColor.onboardingSecondary,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 5),
+                                  const Padding(
+                                    padding: EdgeInsets.only(bottom: 4),
+                                    child: Text(
+                                      'BPM',
+                                      style: TextStyle(
+                                        color: AppColor.onboardingSecondary,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 7),
                             Container(

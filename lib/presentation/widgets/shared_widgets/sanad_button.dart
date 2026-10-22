@@ -10,6 +10,7 @@ class SanadButton extends StatelessWidget {
     this.icon = Icons.arrow_forward_rounded,
     this.fontSize = 14,
     this.height = 60,
+    this.cornerRadius,
   });
 
   final String label;
@@ -17,6 +18,7 @@ class SanadButton extends StatelessWidget {
   final IconData? icon;
   final double fontSize;
   final double height;
+  final double? cornerRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,11 @@ class SanadButton extends StatelessWidget {
           backgroundColor: AppColor.primary,
           foregroundColor: AppColor.surface,
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          shape: const StadiumBorder(),
+          shape: cornerRadius == null
+              ? const StadiumBorder()
+              : RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(cornerRadius!),
+                ),
           elevation: 0,
         ),
         child: Row(

@@ -68,17 +68,23 @@ class OtpVerificationContent extends StatelessWidget {
               color: AppColor.otpText,
             ),
             const SizedBox(width: 10),
-            Text(
-              whatsAppLabel,
-              style: const TextStyle(
-                color: AppColor.otpSupportingText,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                whatsAppLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColor.otpSupportingText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             Text(
               phoneNumber,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               textDirection: TextDirection.ltr,
               style: const TextStyle(
                 color: AppColor.otpText,

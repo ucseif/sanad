@@ -77,9 +77,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: Image.asset(
                                 AppAssets.sanadLogo,
                                 key: const ValueKey('onboarding-logo'),
-                                width: 88,
-                                height: 56,
+                                width: 100,
+                                height: 64,
                                 fit: BoxFit.contain,
+                                color: AppColor.logoTint,
+                                colorBlendMode: BlendMode.srcIn,
                                 semanticLabel: 'SANAD logo',
                               ),
                             ),
