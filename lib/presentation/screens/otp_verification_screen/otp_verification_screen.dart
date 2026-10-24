@@ -45,6 +45,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   DateTime? _expiresAt;
   DateTime? _resendAt;
   String? _statusText;
+  String? _lastSendFailure;
   Timer? _countdownTimer;
 
   @override
@@ -81,20 +82,30 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       setState(() {
         _challengeId = challenge.id;
         _expiresAt = challenge.expiresAt;
+        _lastSendFailure = null;
         _resendAt = DateTime.now().add(const Duration(seconds: 60));
         _countdownTimer?.cancel();
         _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
           if (mounted) setState(() {});
         });
         _statusText = context.l10n.otpSentMessage;
+        if (challenge.deliveryStatus == OtpDeliveryStatus.queued ||
+            challenge.deliveryStatus == OtpDeliveryStatus.sending) {
+          _statusText = Localizations.localeOf(context).languageCode == 'ar'
+              ? 'تم إنشاء طلب الرمز وهو قيد الإرسال إلى واتساب.'
+              : 'The code request was accepted and is queued for WhatsApp.';
+        }
         _code = '';
         _inputRevision++;
       });
     } on WexoraOtpException catch (error) {
       if (!mounted) return;
-      setState(() => _errorText = _localizedError(error.code));
-    } catch (_) {
+      _logWexoraFailure(error, 'send');
+      _lastSendFailure = error.message ?? error.code;
+      setState(() => _errorText = _localizedError(error.code, error.message));
+    } catch (error) {
       if (!mounted) return;
+      _lastSendFailure = error.toString();
       setState(() => _errorText = context.l10n.otpServiceUnavailable);
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -108,6 +119,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       return;
     }
     final challengeId = _challengeId;
+    if (challengeId == null && _lastSendFailure != null) {
+      setState(
+        () => _errorText = Localizations.localeOf(context).languageCode == 'ar'
+            ? 'تعذر إرسال طلب جديد: $_lastSendFailure'
+            : 'The latest send request failed: $_lastSendFailure',
+      );
+      return;
+    }
     if (challengeId == null) {
       setState(() => _errorText = l10n.otpServiceUnavailable);
       return;
@@ -118,6 +137,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _statusText = null;
     });
     try {
+      // Delivery can be asynchronous after the API accepted the challenge.
+      // Keep this diagnostic only; the verify endpoint remains authoritative.
+      try {
+        final delivery = await _otpRepository.getDeliveryStatus(challengeId);
+        debugPrint('Wexora OTP delivery status: ${delivery.name}');
+      } on WexoraOtpException catch (error) {
+        _logWexoraFailure(error, 'delivery-status');
+        // Status lookup is diagnostic only; still allow server-side code verify.
+      }
       final verified = await _otpRepository.verifyCode(
         challengeId: challengeId,
         code: _code,
@@ -148,7 +176,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         context,
       ).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
     } on WexoraOtpException catch (error) {
-      if (mounted) setState(() => _errorText = _localizedError(error.code));
+      if (mounted) {
+        _logWexoraFailure(error, 'verify');
+        setState(() => _errorText = _localizedError(error.code, error.message));
+      }
     } on AuthFailure catch (error) {
       if (!mounted) return;
       setState(() {
@@ -173,22 +204,64 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     }
   }
 
-  String _localizedError(String code) {
+  String _localizedError(String code, [String? serverMessage]) {
     final l10n = context.l10n;
+    if (l10n.isArabic && serverMessage?.trim().isNotEmpty == true) {
+      return serverMessage!.trim();
+    }
     return switch (code) {
       'resource-exhausted' || 'rate-limited' => l10n.otpRateLimited,
-      'invalid-argument' || 'invalid-code' => l10n.otpInvalidMessage,
+      'invalid-code' => l10n.otpInvalidMessage,
       'not-found' => l10n.otpExpiredMessage,
+      'invalid-api-key' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'مفتاح Wexora غير صالح أو متوقف. راجع المفتاح من لوحة Wexora.'
+            : 'The Wexora API key is invalid or disabled. Check it in the Wexora dashboard.',
+      'session-not-found' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'جلسة واتساب غير موجودة في حساب Wexora المرتبط. راجع معرّف الجلسة.'
+            : 'The WhatsApp session was not found in the linked Wexora account. Check the session ID.',
+      'invalid-argument' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'راجع رقم واتساب واكتبه بالصيغة الدولية مع مفتاح الدولة.'
+            : 'Check the WhatsApp number and enter it in international format with its country code.',
+      'missing-otp-permission' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'مفتاح Wexora لا يملك صلاحية otp.send و otp.verify.'
+            : 'The Wexora key needs the otp.send and otp.verify permissions.',
+      'billing-required' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'خطة Wexora أو رصيد الرسائل لا يسمح بإرسال رمز حاليًا.'
+            : 'The Wexora plan or message balance does not allow sending an OTP right now.',
+      'wexora-conflict' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'جلسة واتساب غير متصلة أو يلزم الانتظار قبل إعادة الإرسال.'
+            : 'The WhatsApp session is disconnected or the resend cooldown is still active.',
+      'wexora-unavailable' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'تعذر إكمال طلب OTP من Wexora. رمز الخطأ: $code'
+            : 'Wexora could not complete the OTP request. Error: $code',
+      'unexpected-success-status' =>
+        Localizations.localeOf(context).languageCode == 'ar'
+            ? 'وصل رد غير متوقع من Wexora. رمز الخطأ: $code'
+            : 'Wexora returned an unexpected response. Error: $code',
       'credentials-not-configured' =>
         Localizations.localeOf(context).languageCode == 'ar'
             ? 'بيانات Wexora غير مضبوطة للتجربة. أضف مفتاح API وSession ID عند تشغيل التطبيق.'
             : 'Wexora credentials are missing. Provide the API key and session ID when running the app.',
       'timeout' =>
         Localizations.localeOf(context).languageCode == 'ar'
-            ? 'انتهت مهلة الاتصال بخدمة التحقق. تأكد من تشغيل خادم Wexora وحاول مجددًا.'
-            : 'The verification service timed out. Check that the Wexora proxy is running and try again.',
+            ? 'انتهت مهلة الاتصال بـWexora. تأكد من الإنترنت وحاول بعد قليل.'
+            : 'The connection to Wexora timed out. Check your internet and try again shortly.',
       _ => l10n.otpServiceUnavailable,
     };
+  }
+
+  void _logWexoraFailure(WexoraOtpException error, String operation) {
+    debugPrint(
+      'Wexora OTP $operation failed: code=${error.code}, '
+      'requestId=${error.requestId ?? 'none'}, message=${error.message ?? 'none'}',
+    );
   }
 
   String _maskedPhone(String? phone) {
@@ -248,7 +321,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         onResend: _sendCode,
                         statusText:
                             _statusText ??
-                            (_sending || _expiresAt == null
+                            (_errorText != null
+                                ? ''
+                                : _sending || _expiresAt == null
                                 ? l10n.otpSendingMessage
                                 : l10n.otpExpiryMessage(_expiresAt!)),
                       ),

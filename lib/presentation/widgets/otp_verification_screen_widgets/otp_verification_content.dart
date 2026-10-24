@@ -118,15 +118,17 @@ class OtpVerificationContent extends StatelessWidget {
             child: Text(resendLabel),
           ),
         ),
-        const SizedBox(height: 18),
-        Text(
-          statusText,
-          style: const TextStyle(
-            color: AppColor.otpStatusText,
-            fontSize: 13,
-            height: 1.45,
+        if (statusText.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            statusText,
+            style: const TextStyle(
+              color: AppColor.otpStatusText,
+              fontSize: 13,
+              height: 1.45,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

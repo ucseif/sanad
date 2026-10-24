@@ -68,6 +68,10 @@ class AppLocalizations {
   String get homeSubtitle => isArabic
       ? 'تطبيق رعاية متصل بالمرضى وعائلاتهم'
       : 'Connected care for patients and their families';
+  String get signOutLabel => isArabic ? 'تسجيل الخروج' : 'Sign out';
+  String get signOutFailed => isArabic
+      ? 'تعذر تسجيل الخروج. حاول مرة أخرى.'
+      : 'Could not sign out. Please try again.';
 
   String get loginTitle =>
       isArabic ? 'سجّل الدخول إلى حسابك' : 'Log in to your account';

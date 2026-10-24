@@ -2,6 +2,20 @@
 
 Context-aware medical wearable and caregiving platform built with Flutter.
 
+## Local Wexora OTP credentials
+
+Wexora OTP credentials are intentionally not committed. Copy
+`wexora.local.json.example` to `wexora.local.json`, fill in the API key and
+session ID, then run Flutter with:
+
+```sh
+flutter run --dart-define-from-file=wexora.local.json
+```
+
+The local credentials file is ignored by Git. Keep the Wexora API key private.
+For this temporary direct-to-Wexora setup, the credentials are compiled into
+the app; use it only for local development and do not distribute the build.
+
 هذا الملف يشرح شكل المشروع والـ Architecture الموجودة حاليًا في الكود، وليس Architecture مستقبلية أو مقترحة.
 
 ## Architecture Overview
