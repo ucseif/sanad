@@ -18,7 +18,6 @@ class OtpVerificationContent extends StatelessWidget {
     required this.resendLabel,
     required this.canResend,
     required this.onResend,
-    required this.statusText,
   });
 
   final String title;
@@ -33,7 +32,6 @@ class OtpVerificationContent extends StatelessWidget {
   final String resendLabel;
   final bool canResend;
   final VoidCallback onResend;
-  final String statusText;
 
   @override
   Widget build(BuildContext context) {
@@ -118,17 +116,6 @@ class OtpVerificationContent extends StatelessWidget {
             child: Text(resendLabel),
           ),
         ),
-        if (statusText.isNotEmpty) ...[
-          const SizedBox(height: 18),
-          Text(
-            statusText,
-            style: const TextStyle(
-              color: AppColor.otpStatusText,
-              fontSize: 13,
-              height: 1.45,
-            ),
-          ),
-        ],
       ],
     );
   }

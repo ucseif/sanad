@@ -42,9 +42,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _verified = false;
   int _inputRevision = 0;
   String? _challengeId;
-  DateTime? _expiresAt;
   DateTime? _resendAt;
-  String? _statusText;
   String? _lastSendFailure;
   Timer? _countdownTimer;
 
@@ -69,7 +67,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     setState(() {
       _sending = true;
       _errorText = null;
-      _statusText = null;
     });
     try {
       final challenge = await _otpRepository.sendCode(
@@ -81,20 +78,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (!mounted) return;
       setState(() {
         _challengeId = challenge.id;
-        _expiresAt = challenge.expiresAt;
         _lastSendFailure = null;
         _resendAt = DateTime.now().add(const Duration(seconds: 60));
         _countdownTimer?.cancel();
         _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
           if (mounted) setState(() {});
         });
-        _statusText = context.l10n.otpSentMessage;
-        if (challenge.deliveryStatus == OtpDeliveryStatus.queued ||
-            challenge.deliveryStatus == OtpDeliveryStatus.sending) {
-          _statusText = Localizations.localeOf(context).languageCode == 'ar'
-              ? 'تم إنشاء طلب الرمز وهو قيد الإرسال إلى واتساب.'
-              : 'The code request was accepted and is queued for WhatsApp.';
-        }
         _code = '';
         _inputRevision++;
       });
@@ -134,7 +123,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     setState(() {
       _busy = true;
       _errorText = null;
-      _statusText = null;
     });
     try {
       // Delivery can be asynchronous after the API accepted the challenge.
@@ -193,9 +181,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     } on AuthServiceException catch (error) {
       if (!mounted) return;
       setState(() {
-        _errorText = error.type == AuthServiceFailureType.usernameTaken
-            ? context.l10n.authUsernameTaken
-            : context.l10n.authGenericError;
+        _errorText = switch (error.type) {
+          AuthServiceFailureType.usernameTaken =>
+            context.l10n.authUsernameTaken,
+          AuthServiceFailureType.emailTaken =>
+            context.l10n.authEmailAlreadyUsed,
+          _ => context.l10n.authGenericError,
+        };
       });
     } catch (_) {
       if (mounted) setState(() => _errorText = l10n.otpServiceUnavailable);
@@ -319,13 +311,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             (_resendAt == null ||
                                 !DateTime.now().isBefore(_resendAt!)),
                         onResend: _sendCode,
-                        statusText:
-                            _statusText ??
-                            (_errorText != null
-                                ? ''
-                                : _sending || _expiresAt == null
-                                ? l10n.otpSendingMessage
-                                : l10n.otpExpiryMessage(_expiresAt!)),
                       ),
                     ),
                   ),

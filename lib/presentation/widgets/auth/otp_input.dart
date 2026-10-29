@@ -182,6 +182,7 @@ class _OtpInputState extends State<OtpInput> {
                                 ? TextInputAction.done
                                 : TextInputAction.next,
                             textAlign: TextAlign.center,
+                            textAlignVertical: TextAlignVertical.center,
                             textDirection: TextDirection.ltr,
                             autofillHints: index == 0
                                 ? const [AutofillHints.oneTimeCode]

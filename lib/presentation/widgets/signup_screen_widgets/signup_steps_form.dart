@@ -32,7 +32,7 @@ class SignupStepsForm extends StatelessWidget {
       password,
       confirm;
   final bool usernameError, emailError;
-  final bool usernameChecking;
+  final bool usernameChecking, emailChecking;
   final String? usernameHint, emailHint;
   final bool? usernameTaken, emailInvalid;
   final VoidCallback onToggleObscure,
@@ -73,6 +73,7 @@ class SignupStepsForm extends StatelessWidget {
     this.usernameError = false,
     this.emailError = false,
     this.usernameChecking = false,
+    this.emailChecking = false,
     this.usernameHint,
     this.emailHint,
     this.usernameTaken,
@@ -95,9 +96,8 @@ class SignupStepsForm extends StatelessWidget {
       _ => '',
     };
     bool canNext = switch (regStep) {
-      0 =>
-        AuthValidators.validateEmail(email.text) == null &&
-            emailInvalid == false,
+      0 => AuthValidators.validateEmail(email.text) == null &&
+          emailInvalid == false && !emailChecking,
       1 => username.text.length >= 4 && usernameTaken == false,
       2 => first.text.trim().isNotEmpty && last.text.trim().isNotEmpty,
       3 => passMatch && AuthValidators.validatePassword(password.text) == null,
@@ -249,7 +249,9 @@ class SignupStepsForm extends StatelessWidget {
               isArabic: isArabic,
               icon: Icons.mail_outline_rounded,
               error: emailError,
-              helperText: emailHint,
+              helperText: emailChecking
+                  ? (isArabic ? 'جارٍ التحقق من البريد…' : 'Checking email…')
+                  : emailHint,
               helperColor: emailInvalid == true
                   ? AppColor.loginError
                   : AppColor.loginAvailable,

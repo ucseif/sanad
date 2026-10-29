@@ -17,6 +17,9 @@ service cloud.firestore {
       let reservation = getAfter(
         /databases/$(database)/documents/usernames/$(data.username.lower())
       );
+      let emailReservation = getAfter(
+        /databases/$(database)/documents/emails/$(data.email.lower())
+      );
       return data.keys().hasAll([
           'name', 'email', 'role', 'username', 'firstName', 'lastName',
           'country', 'region', 'address', 'phoneNumber', 'createdAt'
@@ -37,7 +40,8 @@ service cloud.firestore {
         && data.address is string && data.address.size() > 0 && data.address.size() <= 250
         && data.phoneNumber is string && data.phoneNumber.matches('^\\+[0-9]{7,15}$')
         && data.createdAt is timestamp
-        && reservation.data.reserved == true;
+        && reservation.data.reserved == true
+        && emailReservation.data.reserved == true;
     }
 
     match /users/{uid} {
@@ -62,6 +66,18 @@ service cloud.firestore {
         && request.resource.data.reserved == true
         && validUsername(usernameId)
         && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.username.lower() == usernameId;
+      allow update, delete: if false;
+    }
+
+    match /emails/{emailId} {
+      // Availability checks read one canonical email document; listing is denied.
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reserved'])
+        && request.resource.data.reserved == true
+        && emailId == request.auth.token.email.lower()
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.email.lower() == emailId;
       allow update, delete: if false;
     }
   }
