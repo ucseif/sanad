@@ -12,6 +12,7 @@ class ForgotPasswordForm extends StatelessWidget {
   final int emailShake;
   final VoidCallback onBack, onSubmit;
   const ForgotPasswordForm({
+    super.key,
     required this.isArabic,
     required this.loading,
     required this.email,

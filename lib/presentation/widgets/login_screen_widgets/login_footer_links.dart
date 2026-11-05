@@ -5,7 +5,7 @@ import '../shared_widgets/auth_screen_styles.dart';
 
 class LoginFooterLinks extends StatelessWidget {
   final bool isArabic;
-  const LoginFooterLinks({required this.isArabic});
+  const LoginFooterLinks({super.key, required this.isArabic});
   @override
   Widget build(BuildContext context) {
     final t = isArabic ? GoogleFonts.tajawal : GoogleFonts.plusJakartaSans;

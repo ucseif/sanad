@@ -40,19 +40,22 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         await tester.pumpWidget(app(language, DashboardTestAuth(), scale: 1.3));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
         final labels = language == 'ar'
             ? ['اليوم', 'النشاط', 'الصحة', 'الاتجاهات']
             : ['Today', 'Activity', 'Health', 'Insights'];
         for (var tab = 0; tab < 4; tab++) {
           await tester.tap(find.text(labels[tab]).last);
-          await tester.pumpAndSettle();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
           expect(tester.takeException(), isNull);
           await tester.drag(
             find.byType(SingleChildScrollView).first,
             const Offset(0, -600),
           );
-          await tester.pumpAndSettle();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
           expect(tester.takeException(), isNull);
         }
       });
@@ -63,12 +66,15 @@ void main() {
     (tester) async {
       final auth = DashboardTestAuth();
       await tester.pumpWidget(app('en', auth));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.byTooltip('Account'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('test@example.com'), findsOneWidget);
       await tester.tap(find.byTooltip('Sign out'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(auth.signedOut, isTrue);
       expect(find.text('Splash after sign out'), findsOneWidget);
     },

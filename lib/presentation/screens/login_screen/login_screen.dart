@@ -72,8 +72,10 @@ class _LoginScreenState extends State<LoginScreen>
   );
 
   bool _obscureLogin = true, _obscureReset = true, _obscureResetConfirm = true;
-  int _loginUserShake = 0, _loginPassShake = 0, _forgotEmailShake = 0;
-  bool _loginUserErr = false, _loginPassErr = false, _forgotEmailErr = false;
+  final int _loginUserShake = 0, _loginPassShake = 0, _forgotEmailShake = 0;
+  final bool _loginUserErr = false,
+      _loginPassErr = false,
+      _forgotEmailErr = false;
   bool _resetHasUpper = false,
       _resetHasNumber = false,
       _resetHasSpecial = false,
@@ -142,8 +144,12 @@ class _LoginScreenState extends State<LoginScreen>
     _forgotEmail.dispose();
     _resetNewPass.dispose();
     _resetNewConfirm.dispose();
-    for (final c in _otpDigits) c.dispose();
-    for (final f in _otpFocus) f.dispose();
+    for (final c in _otpDigits) {
+      c.dispose();
+    }
+    for (final f in _otpFocus) {
+      f.dispose();
+    }
     _animController.dispose();
     super.dispose();
   }
@@ -153,7 +159,9 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _clearOtpInputs() {
-    for (final c in _otpDigits) c.clear();
+    for (final c in _otpDigits) {
+      c.clear();
+    }
     _otpCode.clear();
   }
 

@@ -13,6 +13,7 @@ class LoginOtpForm extends StatelessWidget {
   final VoidCallback onDigitChanged, onSubmit;
   final VoidCallback? onResend;
   const LoginOtpForm({
+    super.key,
     required this.isArabic,
     required this.loading,
     required this.digits,
@@ -116,10 +117,12 @@ class LoginOtpForm extends StatelessWidget {
                                 border: InputBorder.none,
                               ),
                               onChanged: (v) {
-                                if (v.isNotEmpty && i < 3)
+                                if (v.isNotEmpty && i < 3) {
                                   focusNodes[i + 1].requestFocus();
-                                if (v.isEmpty && i > 0)
+                                }
+                                if (v.isEmpty && i > 0) {
                                   focusNodes[i - 1].requestFocus();
+                                }
                                 onDigitChanged();
                               },
                             ),
@@ -145,7 +148,7 @@ class LoginOtpForm extends StatelessWidget {
                     child: Text(
                       resendLeft > 0
                           ? (isArabic
-                                ? 'إرسال خلال ${resendLeft}ث'
+                                ? 'إرسال خلال $resendLeftث'
                                 : 'Resend in ${resendLeft}s')
                           : (isArabic ? 'إعادة إرسال الكود' : 'Resend Code'),
                       style: t(

@@ -55,7 +55,7 @@ void main() {
 
   testWidgets('OTP screen shows WhatsApp and hides email', (tester) async {
     await pumpOtp(tester);
-    expect(find.text('WhatsApp'), findsOneWidget);
+    expect(find.textContaining('WhatsApp', findRichText: true), findsOneWidget);
     expect(find.text('+••••••5678'), findsOneWidget);
     expect(find.textContaining('@'), findsNothing);
   });
@@ -63,10 +63,10 @@ void main() {
   testWidgets('Arabic OTP keeps phone and digit entry LTR', (tester) async {
     await pumpOtp(tester, locale: const Locale('ar'));
     final phone = find.text('+••••••5678');
-    expect(tester.widget<Text>(phone).textDirection, TextDirection.ltr);
+    expect(Directionality.of(tester.element(phone)), TextDirection.ltr);
 
     final firstDigit = find.descendant(
-      of: find.byKey(const ValueKey('otp-input-0')),
+      of: find.byKey(const ValueKey('otp-code-field')),
       matching: find.byType(EditableText),
     );
     expect(
@@ -83,8 +83,11 @@ void main() {
     await tester.pump();
     expect(find.text('Enter the 6-digit verification code.'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('otp-input-0')));
-    await tester.enterText(find.byKey(const ValueKey('otp-input-0')), '123456');
+    await tester.tap(find.byKey(const ValueKey('otp-code-field')));
+    await tester.enterText(
+      find.byKey(const ValueKey('otp-code-field')),
+      '123456',
+    );
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('otp-verify-submit')));
     await tester.pump();
@@ -107,6 +110,10 @@ void main() {
 }
 
 class _FakeOtpRepository implements OtpVerificationRepository {
+  @override
+  Future<OtpDeliveryStatus> getDeliveryStatus(String challengeId) async =>
+      OtpDeliveryStatus.unknown;
+
   @override
   Future<OtpChallenge> sendCode({
     required String phoneNumber,

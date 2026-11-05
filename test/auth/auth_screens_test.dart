@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sanad/presentation/screens/home_screen/home_screen.dart';
+import 'package:sanad/presentation/screens/role_selection/role_selection_screen.dart';
 
 import 'package:sanad/core/localization/app_localizations.dart';
 import 'package:sanad/core/theme/app_color.dart';
@@ -18,6 +21,7 @@ import 'package:sanad/presentation/screens/splash_screen/splash_screen.dart';
 import 'package:sanad/utils/routes.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   Widget app(
     Widget home, {
     Locale locale = const Locale('en'),
@@ -35,6 +39,9 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       navigatorObservers: [?observer],
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      routes: {
+        AppRoutes.home: (_) => HomeScreen(authService: _testAuthService()),
+      },
       home: home,
       builder: (context, child) => Directionality(
         textDirection: locale.languageCode == 'ar'
@@ -83,11 +90,12 @@ void main() {
     await pumpAuthApp(tester, SplashScreen(authService: _testAuthService()));
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome to SANAD'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('Hi, Test User 👋'), findsOneWidget);
     expect(find.byType(SplashScreen), findsNothing);
   });
 
-  testWidgets('valid login loads the saved user profile and opens home', (
+  testWidgets('login stays signed out until WhatsApp OTP is verified', (
     tester,
   ) async {
     final service = _testAuthService();
@@ -96,6 +104,7 @@ void main() {
       LoginScreen(
         arguments: AuthRouteArguments(role: UserRole.caregiver),
         authService: service,
+        otpRepository: const _FakeOtpRepository(),
       ),
     );
 
@@ -111,8 +120,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to SANAD'), findsOneWidget);
-    expect(find.text('Preview only. No data was sent.'), findsNothing);
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(service.currentUserId, isNull);
+    expect(find.byType(OtpVerificationScreen), findsOneWidget);
+    final arguments = tester
+        .widget<OtpVerificationScreen>(find.byType(OtpVerificationScreen))
+        .arguments;
+    expect(arguments.isLoginVerification, isTrue);
+    expect(arguments.phoneNumber, '+201012345678');
+    await tester.enterText(
+      find.byKey(const ValueKey('otp-code-field')),
+      '000000',
+    );
+    await tester.tap(find.byKey(const ValueKey('otp-verify-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(service.currentUserId, isNull);
+    await tester.enterText(
+      find.byKey(const ValueKey('otp-code-field')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const ValueKey('otp-verify-submit')));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(service.currentUserId, 'test-uid');
   });
 
   testWidgets(
@@ -183,7 +214,9 @@ void main() {
 
       expect(find.text('Welcome, Start with email'), findsOneWidget);
       expect(find.text('Could not check availability'), findsOneWidget);
-      final hint = tester.widget<Text>(find.text('Could not check availability'));
+      final hint = tester.widget<Text>(
+        find.text('Could not check availability'),
+      );
       expect(hint.style?.color, AppColor.loginError);
     },
   );
@@ -254,8 +287,12 @@ void main() {
     );
     await tester.ensureVisible(find.text('Sign up'));
     await tester.tap(find.text('Sign up'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(RoleSelectionScreen), findsOneWidget);
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome, Start with email'), findsOneWidget);
+    expect(find.byType(SignUpScreen), findsOneWidget);
 
     await tester.tap(
       find.byWidgetPredicate(
@@ -266,6 +303,10 @@ void main() {
                 'assets/images/back_to_left.png',
       ),
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(RoleSelectionScreen), findsOneWidget);
+    Navigator.of(tester.element(find.byType(RoleSelectionScreen))).pop();
     await tester.pumpAndSettle();
     expect(find.byType(LoginScreen), findsOneWidget);
     final emailField = find.byKey(const ValueKey('auth-email-field'));
@@ -587,7 +628,7 @@ class _FakeOtpRepository implements OtpVerificationRepository {
   Future<bool> verifyCode({
     required String challengeId,
     required String code,
-  }) async => false;
+  }) async => code == '123456';
 }
 
 class _RecordingObserver extends NavigatorObserver {
@@ -606,8 +647,9 @@ AuthService _testAuthService() => AuthService(
 );
 
 class _FakeAuthRepository implements AuthRepository {
+  String? _uid = 'test-uid';
   @override
-  String? get currentUserId => 'test-uid';
+  String? get currentUserId => _uid;
 
   @override
   Stream<String?> authStateChanges() => const Stream.empty();
@@ -625,10 +667,15 @@ class _FakeAuthRepository implements AuthRepository {
   Future<String> signIn({
     required String email,
     required String password,
-  }) async => 'test-uid';
+  }) async {
+    _uid = 'test-uid';
+    return _uid!;
+  }
 
   @override
-  Future<void> signOut() async {}
+  Future<void> signOut() async {
+    _uid = null;
+  }
 }
 
 class _FakeUserRepository implements UserRepository {

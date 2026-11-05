@@ -1559,21 +1559,26 @@ class _HealthContentState extends State<HealthContent>
                     if (_showReferencePreviewData)
                       Row(
                         children: [
-                          Text(
-                            _t(context, 'LIVE TRACE', 'مخطط النبض'),
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: .35,
-                              color: ReferenceUi.secondary,
+                          Expanded(
+                            child: Text(
+                              _t(context, 'LIVE TRACE', 'مخطط النبض'),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: .35,
+                                color: ReferenceUi.secondary,
+                              ),
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            _t(context, 'SAMPLE MONITOR', 'محاكاة تجريبية'),
-                            style: const TextStyle(
-                              fontSize: 8,
-                              color: Color(0xFFAD777D),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _t(context, 'SAMPLE MONITOR', 'محاكاة تجريبية'),
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                color: Color(0xFFAD777D),
+                              ),
                             ),
                           ),
                         ],
@@ -1672,17 +1677,19 @@ class _HealthContentState extends State<HealthContent>
             ),
           ),
           const SizedBox(width: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 5),
-            child: Text(
-              _t(
-                context,
-                _showReferencePreviewData ? '/500 steps' : 'steps',
-                _showReferencePreviewData ? '/500 خطوة' : 'خطوة',
-              ),
-              style: const TextStyle(
-                fontSize: 13,
-                color: ReferenceUi.secondary,
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                _t(
+                  context,
+                  _showReferencePreviewData ? '/500 steps' : 'steps',
+                  _showReferencePreviewData ? '/500 خطوة' : 'خطوة',
+                ),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: ReferenceUi.secondary,
+                ),
               ),
             ),
           ),
