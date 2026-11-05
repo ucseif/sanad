@@ -7,10 +7,11 @@ import '../../../domain/models/user_role.dart';
 import '../../../utils/routes.dart';
 import '../../widgets/home_widgets/health_dashboard.dart';
 import '../../widgets/home_widgets/reference_ui.dart';
+import '../../widgets/home_widgets/sanad_bottom_navigation.dart';
 
 const _pureBlack = Color(0xFFFFFFFF);
 const _darkCard = Color(0xFFF7F7F8);
-const _darkBorder = Color(0xFFE7E7EA);
+
 const _muted = Color(0xFF85858B);
 
 class HomeScreen extends StatefulWidget {
@@ -61,72 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final ar = context.l10n.isArabic;
     String tr(String en, String arabic) => ar ? arabic : en;
 
-    // Bottom navigation follows the reference's compact four-section layout.
-    final navItems = [
-      {'label': tr('Today', 'اليوم'), 'icon': ReferenceSymbol.today},
-      {'label': tr('Activity', 'النشاط'), 'icon': ReferenceSymbol.run},
-      {'label': tr('Health', 'الصحة'), 'icon': ReferenceSymbol.heart},
-      {'label': tr('Insights', 'الاتجاهات'), 'icon': ReferenceSymbol.chart},
-    ];
-
     return Scaffold(
       backgroundColor: _pureBlack,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-          decoration: const BoxDecoration(
-            color: _pureBlack,
-            border: Border(top: BorderSide(color: _darkBorder, width: 1)),
-          ),
-          child: Row(
-            children: [
-              for (var i = 0; i < navItems.length; i++)
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _tab = i),
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: _tab == i
-                                  ? const Color(0xFF171719)
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: ReferenceIcon(
-                              navItems[i]['icon'] as ReferenceSymbol,
-                              color: _tab == i ? Colors.white : _muted,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            navItems[i]['label'] as String,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: _tab == i
-                                  ? FontWeight.bold
-                                  : FontWeight.w400,
-                              color: _tab == i
-                                  ? const Color(0xFF171719)
-                                  : _muted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
+      bottomNavigationBar: SanadBottomNavigation(
+        selectedIndex: _tab,
+        isArabic: ar,
+        onSelected: (index) => setState(() => _tab = index),
       ),
       body: SafeArea(
         child: Align(
@@ -212,18 +153,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               IconButton(
                                 onPressed: () => setState(() => _tab = 0),
-                                icon: const Icon(
-                                  Icons.chevron_left_rounded,
+                                tooltip: tr('Home', 'الرئيسية'),
+                                icon: Icon(
+                                  ar
+                                      ? Icons.chevron_right_rounded
+                                      : Icons.chevron_left_rounded,
                                   color: Color(0xFF171719),
                                   size: 28,
                                 ),
                               ),
                               Expanded(
                                 child: Text(
-                                  tr(
-                                    'Profile & Care Account',
-                                    'الملف الشخصي وحساب الرعاية',
-                                  ),
+                                  tr('My profile', 'حسابي'),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontSize: 18,
@@ -269,29 +210,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 14),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          user.name,
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF171719),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            user.name,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF171719),
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          user.role == UserRole.patient
-                                              ? context.l10n.patient
-                                              : context.l10n.caregiver,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFF6750A4),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            user.role == UserRole.patient
+                                                ? context.l10n.patient
+                                                : context.l10n.caregiver,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF6750A4),
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -427,7 +370,12 @@ class _DetailCard extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: const Color(0xFF8E8E93)),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: _muted, fontSize: 12)),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: _muted, fontSize: 12),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),

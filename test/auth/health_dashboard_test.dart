@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sanad/core/localization/app_localizations.dart';
 import 'package:sanad/core/theme/app_color.dart';
 import 'package:sanad/presentation/screens/home_screen/home_screen.dart';
+import 'package:sanad/presentation/widgets/home_widgets/sanad_bottom_navigation.dart';
 import 'dashboard_fixture.dart';
 
 Widget app(String language, DashboardTestAuth auth, {double scale = 1}) =>
@@ -30,6 +31,50 @@ Widget app(String language, DashboardTestAuth auth, {double scale = 1}) =>
       },
     );
 void main() {
+  testWidgets('dock has accessible touch targets on a narrow phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: SanadBottomNavigation(
+              selectedIndex: 0,
+              isArabic: false,
+              onSelected: (_) {},
+            ),
+          ),
+        ),
+      );
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    } finally {
+      semantics.dispose();
+    }
+  });
+  testWidgets('bottom navigation opens all five pages including the account', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app('en', DashboardTestAuth()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final profile = find.byKey(const ValueKey('nav-profile'));
+    expect(profile, findsOneWidget);
+    await tester.tap(profile);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('test@example.com'), findsOneWidget);
+    expect(tester.widget<Semantics>(profile).properties.selected, isTrue);
+    await tester.tap(find.byKey(const ValueKey('nav-home')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Your health, at a glance'), findsOneWidget);
+    expect(find.text('test@example.com'), findsNothing);
+  });
   for (final language in ['en', 'ar']) {
     for (final width in [320.0, 390.0]) {
       testWidgets('complete reference screens fit $language at $width', (
@@ -42,14 +87,31 @@ void main() {
         await tester.pumpWidget(app(language, DashboardTestAuth(), scale: 1.3));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
-        final labels = language == 'ar'
-            ? ['اليوم', 'النشاط', 'الصحة', 'الاتجاهات']
-            : ['Today', 'Activity', 'Health', 'Insights'];
-        for (var tab = 0; tab < 4; tab++) {
-          await tester.tap(find.text(labels[tab]).last);
+        final destinations = [
+          'home',
+          'activity',
+          'health',
+          'insights',
+          'profile',
+        ];
+        for (var tab = 0; tab < destinations.length; tab++) {
+          await tester.tap(find.byKey(ValueKey('nav-${destinations[tab]}')));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));
-          expect(tester.takeException(), isNull);
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'destination ${destinations[tab]}',
+          );
+          expect(
+            tester
+                .widget<Semantics>(
+                  find.byKey(ValueKey('nav-${destinations[tab]}')),
+                )
+                .properties
+                .selected,
+            isTrue,
+          );
           await tester.drag(
             find.byType(SingleChildScrollView).first,
             const Offset(0, -600),

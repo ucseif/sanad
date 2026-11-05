@@ -2185,6 +2185,7 @@ class _ActivityRingPainter extends CustomPainter {
           text: '+34',
           style: TextStyle(
             color: Color(0xFF234F98),
+            fontFamily: 'Poppins',
             fontSize: 10,
             fontWeight: FontWeight.w700,
             height: 1,
@@ -2225,12 +2226,12 @@ class _ActivityRingPainter extends CustomPainter {
       if (isArabic) {
         _paintCurvedLabel(
           canvas,
-          'نشاط الأسبوع',
+          'النشاط الأسبوعي',
           center,
           labelRadius,
           -math.pi / 2,
           1,
-          fontSize: size.shortestSide * .065,
+          fontSize: size.shortestSide * .072,
           curveArabicAsWord: true,
         );
       } else {
@@ -2268,6 +2269,7 @@ class _ActivityRingPainter extends CustomPainter {
   }) {
     final style = TextStyle(
       color: const Color(0xFF24262B),
+      fontFamily: 'Poppins',
       fontSize: fontSize,
       fontWeight: FontWeight.w500,
       height: 1,
@@ -2277,14 +2279,41 @@ class _ActivityRingPainter extends CustomPainter {
     // Keep Arabic joined; the English reference uses individually rotated glyphs.
     if (curveArabicAsWord) {
       final painter = TextPainter(
-        text: TextSpan(text: text, style: style),
+        text: TextSpan(
+          text: text,
+          style: style.copyWith(
+            fontFamily: 'Tajawal',
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0,
+          ),
+        ),
         textDirection: TextDirection.rtl,
       )..layout();
-      canvas.save();
-      canvas.translate(center.dx, center.dy - radius);
-      canvas.rotate(-.22);
-      painter.paint(canvas, Offset(-painter.width / 2, -painter.height / 2));
-      canvas.restore();
+      // Shape the entire Arabic phrase first, then bend narrow slices of that
+      // joined line around the circle. Painting letters separately loses their
+      // contextual forms; rotating the whole line leaves a tilted, flat label.
+      const sliceWidth = .75;
+      for (var x = 0.0; x < painter.width; x += sliceWidth) {
+        final sliceCenter = x + sliceWidth / 2;
+        final angle = middleAngle + (sliceCenter - painter.width / 2) / radius;
+        canvas.save();
+        canvas.translate(
+          center.dx + radius * math.cos(angle),
+          center.dy + radius * math.sin(angle),
+        );
+        canvas.rotate(angle + math.pi / 2);
+        canvas.clipRect(
+          Rect.fromLTWH(
+            -sliceWidth / 2 - .25,
+            -painter.height,
+            sliceWidth + .5,
+            painter.height * 2,
+          ),
+        );
+        painter.paint(canvas, Offset(-sliceCenter, -painter.height / 2));
+        canvas.restore();
+      }
+      painter.dispose();
       return;
     }
 
@@ -2326,7 +2355,8 @@ class _ActivityRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ActivityRingPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ActivityRingPainter oldDelegate) =>
+      oldDelegate.isArabic != isArabic;
 }
 
 class _SleepStagesPainter extends CustomPainter {
