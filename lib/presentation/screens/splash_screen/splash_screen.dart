@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../application/auth/auth_service.dart';
 import '../../../core/assets/app_assets.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/localization/app_localizations.dart';
-import '../../../core/theme/app_color.dart';
 import '../../../domain/models/app_user.dart';
 import '../../../utils/routes.dart';
 
@@ -28,10 +27,35 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _restoreSession() async {
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     final user = await _loadCurrentUser();
+    SharedPreferences? preferences;
+    var onboardingCompleted = false;
+    try {
+      preferences = await SharedPreferences.getInstance();
+      onboardingCompleted =
+          preferences.getBool(AppConstants.onboardingCompletedPreferenceKey) ??
+          false;
+    } catch (_) {
+      // Missing local preferences should only affect first-run onboarding.
+    }
+    if (!mounted) return;
+    if (user != null && !onboardingCompleted) {
+      try {
+        await preferences?.setBool(
+          AppConstants.onboardingCompletedPreferenceKey,
+          true,
+        );
+      } catch (_) {
+        // Preserve navigation even when local storage is unavailable.
+      }
+    }
     if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
-      user == null ? AppRoutes.onboarding : AppRoutes.home,
+      user != null
+          ? AppRoutes.home
+          : onboardingCompleted
+          ? AppRoutes.login
+          : AppRoutes.onboarding,
     );
   }
 
@@ -47,9 +71,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: AppColor.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => Column(
@@ -75,37 +98,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const Spacer(),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  0,
-                  20,
-                  constraints.maxHeight < 600 ? 18 : 24,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.splashCopyrightEnglish,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColor.mutedText,
-                        fontSize: 10,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.splashCopyrightArabic,
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(
-                        color: AppColor.mutedText,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

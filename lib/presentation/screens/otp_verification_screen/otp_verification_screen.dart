@@ -143,6 +143,26 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       }
       final args = widget.arguments;
+      if (args.isLoginVerification) {
+        final email = args.email?.trim();
+        final password = args.password;
+        if (email == null ||
+            email.isEmpty ||
+            password == null ||
+            password.isEmpty) {
+          if (mounted) {
+            setState(() => _errorText = l10n.authProfileIncomplete);
+          }
+          return;
+        }
+        await _authService.signIn(email: email, password: password);
+        if (!mounted) return;
+        setState(() => _verified = true);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
+        return;
+      }
       final registration = args.registrationData;
       if (registration == null &&
           args.email == null &&
@@ -292,8 +312,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       child: OtpVerificationContent(
                         title: l10n.otpTitle,
                         description: isArabic
-                            ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر واتساب.'
-                            : 'Enter the 6-digit code sent to you on WhatsApp.',
+                            ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر'
+                            : 'Enter the 6-digit code sent to you on',
                         whatsAppLabel: isArabic ? 'واتساب' : 'WhatsApp',
                         phoneNumber: _maskedPhone(widget.arguments.phoneNumber),
                         codeLabel: l10n.otpCodeLabel,
@@ -305,6 +325,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           if (value.length == 6) _errorText = null;
                         }),
                         resendLabel: _resendLabel(l10n),
+                        isArabic: isArabic,
                         canResend:
                             !_sending &&
                             !_busy &&

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/assets/app_assets.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../presentation/widgets/onboarding_widgets/onboarding_illustrations.dart';
-import '../../../core/assets/app_assets.dart';
 import '../../../presentation/widgets/shared_widgets/sanad_button.dart';
 import '../../../presentation/widgets/onboarding_widgets/onboarding_page_dots.dart';
 import 'onboarding_language_selector.dart';
@@ -31,13 +33,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _finish() {
-    Navigator.pushReplacementNamed(context, AppRoutes.roleSelection);
+  Future<void> _finish() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool(
+        AppConstants.onboardingCompletedPreferenceKey,
+        true,
+      );
+    } catch (_) {
+      // Continue into sign-in even if local preference storage is unavailable.
+    }
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   Future<void> _next() async {
     if (_currentPage == _pageCount - 1) {
-      _finish();
+      await _finish();
       return;
     }
     if (MediaQuery.disableAnimationsOf(context)) {
@@ -81,8 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 height: 64,
                                 fit: BoxFit.contain,
                                 color: AppColor.logoTint,
-                                colorBlendMode: BlendMode.srcIn,
-                                semanticLabel: 'SANAD logo',
+                                semanticLabel: l10n.sanadLogoLabel,
                               ),
                             ),
                             Align(
