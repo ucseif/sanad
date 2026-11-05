@@ -31,6 +31,74 @@ Widget app(String language, DashboardTestAuth auth, {double scale = 1}) =>
       },
     );
 void main() {
+  testWidgets(
+    'floating dock overlays the viewport and leaves the final content visible',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.view.padding = const FakeViewPadding(bottom: 24);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      await tester.pumpWidget(app('en', DashboardTestAuth()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.byKey(const ValueKey('nav-profile')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      final scroll = find.byType(SingleChildScrollView).first;
+      final dock = find.byType(SanadBottomNavigation);
+      expect(tester.getRect(dock).bottom, closeTo(604, .1));
+      expect(
+        tester.getRect(scroll).bottom,
+        greaterThan(tester.getRect(dock).bottom),
+      );
+      await tester.drag(scroll, const Offset(0, -2000));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        tester.getRect(find.text('Test address')).bottom,
+        lessThanOrEqualTo(tester.getRect(dock).top - 16),
+      );
+    },
+  );
+
+  testWidgets('selection indicator travels smoothly between destinations', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app('en', DashboardTestAuth()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final indicator = find.byKey(const ValueKey('nav-selection-indicator'));
+    final before = tester.getTopLeft(indicator).dx;
+    await tester.tap(find.byKey(const ValueKey('nav-profile')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    final during = tester.getTopLeft(indicator).dx;
+    await tester.pump(const Duration(milliseconds: 300));
+    final after = tester.getTopLeft(indicator).dx;
+    expect(during, greaterThan(before));
+    expect(during, lessThan(after));
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('reduced motion changes destination without animating the dock', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(app('en', DashboardTestAuth()));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('nav-profile')));
+    await tester.pump();
+    final indicator = tester.getRect(
+      find.byKey(const ValueKey('nav-selection-indicator')),
+    );
+    final profile = tester.getRect(find.byKey(const ValueKey('nav-profile')));
+    expect(indicator.left, closeTo(profile.left, .1));
+    expect(find.text('test@example.com'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('dock has accessible touch targets on a narrow phone', (
     tester,
   ) async {
