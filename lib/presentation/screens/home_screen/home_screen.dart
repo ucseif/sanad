@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../application/auth/auth_service.dart';
+import '../../../application/auth/auth_scope.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../domain/models/app_user.dart';
 import '../../../domain/models/user_role.dart';
@@ -15,15 +16,16 @@ const _darkCard = Color(0xFFF7F7F8);
 const _muted = Color(0xFF85858B);
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.authService});
+  const HomeScreen({super.key, this.authService, this.initialUser});
   final AuthService? authService;
+  final AppUser? initialUser;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final AuthService _auth = widget.authService ?? AuthService.firebase();
+  late final AuthService _auth = widget.authService ?? AuthScope.read(context);
   late Future<AppUser?> _profile;
   bool _signingOut = false;
   int _tab = 0;
@@ -31,9 +33,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _profile = _auth.getCurrentUserProfile();
+    _profile = _loadProfile();
   }
 
+  Future<AppUser?> _loadProfile() => _auth.getCurrentUserProfile().then((user) {
+    if (user == null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+        }
+      });
+    }
+    return user;
+  });
   Future<void> _signOut() async {
     if (_signingOut) return;
     setState(() => _signingOut = true);
@@ -117,14 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (_tab != 4)
-                              HealthDashboard(
-                                tab: _tab,
-                                userName: user?.name,
-                                onOpenProfile: () => setState(() => _tab = 4),
-                                onOpenTab: (tab) => setState(() => _tab = tab),
-                              )
-                            else if (loading)
+                            if (loading)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 80),
                                 child: Center(
@@ -150,10 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: OutlinedButton.icon(
-                                  onPressed: () => setState(
-                                    () => _profile = _auth
-                                        .getCurrentUserProfile(),
-                                  ),
+                                  onPressed: () => setState(() {
+                                    _profile = _loadProfile();
+                                  }),
                                   icon: const Icon(
                                     Icons.refresh_rounded,
                                     size: 19,
@@ -167,7 +173,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                            ] else if (user != null) ...[
+                            ] else if (_tab != 4)
+                              HealthDashboard(
+                                tab: _tab,
+                                userName: user?.name,
+                                onOpenProfile: () => setState(() => _tab = 4),
+                                onOpenTab: (tab) => setState(() => _tab = tab),
+                              )
+                            else if (user != null) ...[
                               // Account & Profile Header
                               Row(
                                 children: [

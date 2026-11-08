@@ -40,8 +40,8 @@ class ForgotPasswordForm extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           isArabic
-              ? 'أدخل بريدك الإلكتروني لإرسال كود استعادة الحساب.'
-              : 'Enter your email to receive account recovery code.',
+              ? 'أدخل بريد الحساب. إذا كان مؤهلاً سنطلب إرسال كود عبر واتساب.'
+              : 'Enter your account email. If eligible, WhatsApp code delivery will be requested.',
           style: t(fontSize: 16, color: context.sanadDim, height: 1.5),
         ),
         const SizedBox(height: 40),

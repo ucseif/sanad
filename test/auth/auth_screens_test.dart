@@ -1,3 +1,7 @@
+import 'dart:convert';
+import '../support/laravel_auth_fixture.dart';
+import 'package:sanad/application/auth/auth_scope.dart';
+import 'package:sanad/domain/models/sanctum_token.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,10 +12,7 @@ import 'package:sanad/presentation/screens/role_selection/role_selection_screen.
 import 'package:sanad/core/localization/app_localizations.dart';
 import 'package:sanad/core/theme/app_color.dart';
 import 'package:sanad/application/auth/auth_service.dart';
-import 'package:sanad/domain/models/app_user.dart';
-import 'package:sanad/domain/repositories/auth_repository.dart';
-import 'package:sanad/domain/repositories/user_repository.dart';
-import 'package:sanad/data/repositories/wexora_otp_repository.dart';
+
 import 'package:sanad/domain/models/user_role.dart';
 import 'package:sanad/presentation/auth/auth_route_arguments.dart';
 import 'package:sanad/presentation/screens/login_screen/login_screen.dart';
@@ -20,34 +21,42 @@ import 'package:sanad/presentation/screens/signup_screen/signup_screen.dart';
 import 'package:sanad/presentation/screens/splash_screen/splash_screen.dart';
 import 'package:sanad/utils/routes.dart';
 
+late LaravelAuthFixture _fixture;
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    _fixture = LaravelAuthFixture();
+  });
+  tearDown(() => _fixture.close());
   Widget app(
     Widget home, {
     Locale locale = const Locale('en'),
     NavigatorObserver? observer,
   }) {
-    return MaterialApp(
-      locale: locale,
-      theme: AppColor.theme(isArabic: locale.languageCode == 'ar'),
-      localizationsDelegates: const [
-        AppLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      navigatorObservers: [?observer],
-      onGenerateRoute: AppRoutes.onGenerateRoute,
-      routes: {
-        AppRoutes.home: (_) => HomeScreen(authService: _testAuthService()),
-      },
-      home: home,
-      builder: (context, child) => Directionality(
-        textDirection: locale.languageCode == 'ar'
-            ? TextDirection.rtl
-            : TextDirection.ltr,
-        child: child ?? const SizedBox.shrink(),
+    return AuthScope(
+      auth: _fixture.auth,
+      child: MaterialApp(
+        locale: locale,
+        theme: AppColor.theme(isArabic: locale.languageCode == 'ar'),
+        localizationsDelegates: const [
+          AppLocalizationsDelegate(),
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        navigatorObservers: [?observer],
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+        routes: {
+          AppRoutes.home: (_) => HomeScreen(authService: _testAuthService()),
+        },
+        home: home,
+        builder: (context, child) => Directionality(
+          textDirection: locale.languageCode == 'ar'
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }
@@ -61,7 +70,9 @@ void main() {
     await tester.pumpWidget(
       app(home, locale: locale ?? const Locale('en'), observer: observer),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   testWidgets('login rejects invalid email and keeps the Oufa auth layout', (
@@ -89,9 +100,11 @@ void main() {
   ) async {
     await pumpAuthApp(tester, SplashScreen(authService: _testAuthService()));
     await tester.pump(const Duration(milliseconds: 1500));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Hi, Test User 👋'), findsOneWidget);
+    expect(find.text('Hi, Amina Hassan 👋'), findsOneWidget);
     expect(find.byType(SplashScreen), findsNothing);
   });
 
@@ -104,7 +117,6 @@ void main() {
       LoginScreen(
         arguments: AuthRouteArguments(role: UserRole.caregiver),
         authService: service,
-        otpRepository: const _FakeOtpRepository(),
       ),
     );
 
@@ -118,32 +130,38 @@ void main() {
     );
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(HomeScreen), findsNothing);
-    expect(service.currentUserId, isNull);
+    expect(service.currentUser, isNull);
     expect(find.byType(OtpVerificationScreen), findsOneWidget);
     final arguments = tester
         .widget<OtpVerificationScreen>(find.byType(OtpVerificationScreen))
         .arguments;
     expect(arguments.isLoginVerification, isTrue);
-    expect(arguments.phoneNumber, '+201012345678');
+    expect(arguments.phoneNumber, isNull);
     await tester.enterText(
       find.byKey(const ValueKey('otp-code-field')),
       '000000',
     );
     await tester.tap(find.byKey(const ValueKey('otp-verify-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(HomeScreen), findsNothing);
-    expect(service.currentUserId, isNull);
+    expect(service.currentUser, isNull);
     await tester.enterText(
       find.byKey(const ValueKey('otp-code-field')),
       '123456',
     );
     await tester.tap(find.byKey(const ValueKey('otp-verify-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(service.currentUserId, 'test-uid');
+    expect(service.currentUser?.uid, '7');
   });
 
   testWidgets(
@@ -180,7 +198,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Choose username'), findsOneWidget);
     expect(find.byKey(const ValueKey('signup-username-field')), findsOneWidget);
@@ -189,12 +209,10 @@ void main() {
   testWidgets(
     'signup blocks the email step and shows a red error when availability check fails',
     (tester) async {
-      final authService = AuthService(
-        authRepository: _FakeAuthRepository(),
-        userRepository: _FakeUserRepository(
-          emailAvailability: (_) async => throw StateError('Firestore offline'),
-        ),
-      );
+      final authService = _testAuthService();
+      _fixture.failurePath = '/api/auth/availability/email';
+      _fixture.failureStatus = 503;
+      _fixture.failureCode = 'otp-service-unavailable';
       await pumpAuthApp(
         tester,
         SignUpScreen(
@@ -210,7 +228,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
       await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1100));
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Welcome, Start with email'), findsOneWidget);
       expect(find.text('Could not check availability'), findsOneWidget);
@@ -224,13 +244,10 @@ void main() {
   testWidgets('username availability failures are shown as errors', (
     tester,
   ) async {
-    final authService = AuthService(
-      authRepository: _FakeAuthRepository(),
-      userRepository: _FakeUserRepository(
-        usernameAvailability: (_) async =>
-            throw StateError('Firestore offline'),
-      ),
-    );
+    final authService = _testAuthService();
+    _fixture.failurePath = '/api/auth/availability/username';
+    _fixture.failureStatus = 503;
+    _fixture.failureCode = 'otp-service-unavailable';
     await pumpAuthApp(
       tester,
       SignUpScreen(
@@ -245,7 +262,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.enterText(
       find.byKey(const ValueKey('signup-username-field')),
       'setugd',
@@ -291,7 +310,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(RoleSelectionScreen), findsOneWidget);
     await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(SignUpScreen), findsOneWidget);
 
     await tester.tap(
@@ -307,7 +328,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(RoleSelectionScreen), findsOneWidget);
     Navigator.of(tester.element(find.byType(RoleSelectionScreen))).pop();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(LoginScreen), findsOneWidget);
     final emailField = find.byKey(const ValueKey('auth-email-field'));
     final passwordField = find.byKey(const ValueKey('auth-password-field'));
@@ -410,7 +433,6 @@ void main() {
             email: 'sarah@gmail.com',
             phoneNumber: '+201012345678',
           ),
-          repository: _FakeOtpRepository(),
         ),
         'otp-verify-submit',
       ),
@@ -421,7 +443,9 @@ void main() {
       for (final (screen, actionKey) in screens) {
         await pumpAuthApp(tester, screen);
         await tester.ensureVisible(find.byKey(ValueKey(actionKey)));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1100));
+        await tester.pump(const Duration(milliseconds: 300));
         final action = tester.getRect(find.byKey(ValueKey(actionKey)));
         expect(
           action.top,
@@ -461,7 +485,9 @@ void main() {
     final emailField = find.byKey(const ValueKey('signup-email-field'));
     await tester.ensureVisible(emailField);
     await tester.tap(emailField);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     final keyboardTop = size.height - 275;
     final activeFieldRect = tester.getRect(emailField);
@@ -519,7 +545,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Choose username'), findsOneWidget);
     await tester.enterText(
@@ -527,9 +555,13 @@ void main() {
       'user_123',
     );
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.enterText(
       find.byKey(const ValueKey('signup-first-name-field')),
@@ -539,9 +571,13 @@ void main() {
       find.byKey(const ValueKey('signup-last-name-field')),
       'Hassan',
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Secure account'), findsOneWidget);
     await tester.enterText(
@@ -552,23 +588,33 @@ void main() {
       find.byKey(const ValueKey('signup-confirm-password-field')),
       'ValidPass1!',
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Phone number'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('signup-phone-field')),
       '1012345678',
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.ensureVisible(
       find.byKey(const ValueKey('signup-region-field')),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(
       find
           .ancestor(
@@ -577,21 +623,31 @@ void main() {
           )
           .first,
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Cairo').last);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.ensureVisible(find.byKey(const ValueKey('signup-submit')));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.enterText(
       find.byKey(const ValueKey('signup-address-field')),
       '12 Nile Street',
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.ensureVisible(find.byKey(const ValueKey('signup-submit')));
     await tester.tap(find.byKey(const ValueKey('signup-submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(observer.lastPushed?.settings.name, AppRoutes.otpVerification);
     final arguments =
@@ -599,36 +655,20 @@ void main() {
     expect(arguments.role, UserRole.patient);
     expect(arguments.email, 'user@example.com');
     expect(arguments.phoneNumber, '+201012345678');
-    expect(arguments.registrationData?.username, 'user_123');
-    expect(arguments.registrationData?.firstName, 'Amina');
-    expect(arguments.registrationData?.lastName, 'Hassan');
-    expect(arguments.registrationData?.country, 'Egypt');
-    expect(arguments.registrationData?.region, 'Cairo');
-    expect(arguments.registrationData?.address, '12 Nile Street');
+    final sent =
+        jsonDecode(
+              _fixture.requests
+                  .firstWhere((r) => r.url.path == '/api/auth/signup/start')
+                  .body,
+            )
+            as Map;
+    expect(sent['username'], 'user_123');
+    expect(sent['first_name'], 'Amina');
+    expect(sent['last_name'], 'Hassan');
+    expect(sent['country'], 'Egypt');
+    expect(sent['region'], 'Cairo');
+    expect(sent['address'], '12 Nile Street');
   });
-}
-
-class _FakeOtpRepository implements OtpVerificationRepository {
-  const _FakeOtpRepository();
-
-  @override
-  Future<OtpDeliveryStatus> getDeliveryStatus(String challengeId) async =>
-      OtpDeliveryStatus.unknown;
-
-  @override
-  Future<OtpChallenge> sendCode({
-    required String phoneNumber,
-    required String language,
-  }) async => OtpChallenge(
-    id: 'otp-challenge-12345',
-    expiresAt: DateTime.now().add(const Duration(minutes: 5)),
-  );
-
-  @override
-  Future<bool> verifyCode({
-    required String challengeId,
-    required String code,
-  }) async => code == '123456';
 }
 
 class _RecordingObserver extends NavigatorObserver {
@@ -641,72 +681,10 @@ class _RecordingObserver extends NavigatorObserver {
   }
 }
 
-AuthService _testAuthService() => AuthService(
-  authRepository: _FakeAuthRepository(),
-  userRepository: _FakeUserRepository(),
-);
-
-class _FakeAuthRepository implements AuthRepository {
-  String? _uid = 'test-uid';
-  @override
-  String? get currentUserId => _uid;
-
-  @override
-  Stream<String?> authStateChanges() => const Stream.empty();
-
-  @override
-  Future<String> createAccount({
-    required String email,
-    required String password,
-  }) async => 'test-uid';
-
-  @override
-  Future<void> deleteCurrentAccount() async {}
-
-  @override
-  Future<String> signIn({
-    required String email,
-    required String password,
-  }) async {
-    _uid = 'test-uid';
-    return _uid!;
-  }
-
-  @override
-  Future<void> signOut() async {
-    _uid = null;
-  }
-}
-
-class _FakeUserRepository implements UserRepository {
-  _FakeUserRepository({this.usernameAvailability, this.emailAvailability});
-
-  final Future<bool> Function(String username)? usernameAvailability;
-  final Future<bool> Function(String email)? emailAvailability;
-
-  @override
-  Future<void> createUser(AppUser user) async {}
-
-  @override
-  Future<AppUser?> getUser(String uid) async => const AppUser(
-    uid: 'test-uid',
-    name: 'Test User',
-    email: 'caregiver@example.com',
-    role: UserRole.caregiver,
-    username: 'caregiver_1',
-    firstName: 'Test',
-    lastName: 'User',
-    country: 'Egypt',
-    region: 'Cairo',
-    address: 'Test Street',
-    phoneNumber: '+201012345678',
+AuthService _testAuthService() {
+  _fixture.tokens.value = SanctumToken(
+    value: 'fixture-token',
+    expiresAt: DateTime.now().add(const Duration(days: 1)),
   );
-
-  @override
-  Future<bool> isUsernameAvailable(String username) async =>
-      usernameAvailability?.call(username) ?? true;
-
-  @override
-  Future<bool> isEmailAvailable(String email) async =>
-      emailAvailability?.call(email) ?? true;
+  return _fixture.auth;
 }

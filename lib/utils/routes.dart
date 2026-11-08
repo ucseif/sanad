@@ -21,15 +21,15 @@ abstract final class AppRoutes {
   static const String signup = SignUpScreen.routeName;
   static const String otpVerification = OtpVerificationScreen.routeName;
 
-  static Route<void> transition({
+  static Route<T> transition<T>({
     required RouteSettings settings,
     required WidgetBuilder builder,
-  }) => _animatedPage(settings, builder);
+  }) => _animatedPage<T>(settings, builder);
 
-  static Route<void> _animatedPage(
+  static Route<T> _animatedPage<T>(
     RouteSettings settings,
     WidgetBuilder builder,
-  ) => PageRouteBuilder<void>(
+  ) => PageRouteBuilder<T>(
     settings: settings,
     transitionDuration: const Duration(milliseconds: 160),
     reverseTransitionDuration: const Duration(milliseconds: 130),

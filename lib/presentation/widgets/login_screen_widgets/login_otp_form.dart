@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -12,6 +13,7 @@ class LoginOtpForm extends StatelessWidget {
   final int resendLeft;
   final VoidCallback onDigitChanged, onSubmit;
   final VoidCallback? onResend;
+  final VoidCallback? onBack;
   const LoginOtpForm({
     super.key,
     required this.isArabic,
@@ -22,6 +24,7 @@ class LoginOtpForm extends StatelessWidget {
     required this.onDigitChanged,
     this.subtitle,
     this.onResend,
+    this.onBack,
     this.resendLeft = 0,
   });
   @override
@@ -33,7 +36,7 @@ class LoginOtpForm extends StatelessWidget {
       children: [
         const SizedBox(height: 40),
         Expanded(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,8 +59,8 @@ class LoginOtpForm extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         isArabic
-                            ? 'أدخل الكود المكون من 4 أرقام المرسل لبريدك:\n$subtitle'
-                            : 'Enter the 4-digit code sent to your email:\n$subtitle',
+                            ? 'أدخل الكود المكون من 6 أرقام عبر واتساب لحساب مؤهل:\n$subtitle'
+                            : 'If the account is eligible, enter its 6-digit WhatsApp code:\n$subtitle',
                         style: t(
                           fontSize: 16,
                           color: context.sanadDim,
@@ -68,63 +71,71 @@ class LoginOtpForm extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    4,
-                    (i) => Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Container(
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: context.sanadCardInner,
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                              color: focusNodes[i].hasFocus
-                                  ? context.sanadText
-                                  : context.sanadBorder,
-                              width: 1.5,
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      digits.length,
+                      (i) => Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Container(
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: context.sanadCardInner,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: focusNodes[i].hasFocus
+                                    ? context.sanadText
+                                    : context.sanadBorder,
+                                width: 1.5,
+                              ),
                             ),
-                          ),
-                          child: Center(
-                            child: TextField(
-                              controller: digits[i],
-                              focusNode: focusNodes[i],
-                              enabled: !loading,
-                              textAlign: TextAlign.center,
-                              textAlignVertical: TextAlignVertical.center,
-                              keyboardType: TextInputType.number,
-                              maxLength: 1,
-                              autofillHints: i == 0
-                                  ? const [AutofillHints.oneTimeCode]
-                                  : null,
-                              style: t(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                color: context.sanadText,
-                                height: 1,
+                            child: Center(
+                              child: TextField(
+                                controller: digits[i],
+                                focusNode: focusNodes[i],
+                                enabled: !loading,
+                                textAlign: TextAlign.center,
+                                textAlignVertical: TextAlignVertical.center,
+                                keyboardType: TextInputType.number,
+                                textDirection: TextDirection.ltr,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                key: ValueKey('recovery-digit-$i'),
+                                maxLength: 1,
+                                autofillHints: i == 0
+                                    ? const [AutofillHints.oneTimeCode]
+                                    : null,
+                                style: t(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
+                                  color: context.sanadText,
+                                  height: 1,
+                                ),
+                                strutStyle: const StrutStyle(
+                                  fontSize: 28,
+                                  height: 1,
+                                  forceStrutHeight: true,
+                                ),
+                                decoration: const InputDecoration(
+                                  counterText: '',
+                                  isCollapsed: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  border: InputBorder.none,
+                                ),
+                                onChanged: (v) {
+                                  if (v.isNotEmpty && i < digits.length - 1) {
+                                    focusNodes[i + 1].requestFocus();
+                                  }
+                                  if (v.isEmpty && i > 0) {
+                                    focusNodes[i - 1].requestFocus();
+                                  }
+                                  onDigitChanged();
+                                },
                               ),
-                              strutStyle: const StrutStyle(
-                                fontSize: 28,
-                                height: 1,
-                                forceStrutHeight: true,
-                              ),
-                              decoration: const InputDecoration(
-                                counterText: '',
-                                isCollapsed: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                              onChanged: (v) {
-                                if (v.isNotEmpty && i < 3) {
-                                  focusNodes[i + 1].requestFocus();
-                                }
-                                if (v.isEmpty && i > 0) {
-                                  focusNodes[i - 1].requestFocus();
-                                }
-                                onDigitChanged();
-                              },
                             ),
                           ),
                         ),
@@ -159,6 +170,11 @@ class LoginOtpForm extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (onBack != null)
+                  TextButton(
+                    onPressed: loading ? null : onBack,
+                    child: Text(isArabic ? 'رجوع' : 'Back'),
+                  ),
               ],
             ),
           ),

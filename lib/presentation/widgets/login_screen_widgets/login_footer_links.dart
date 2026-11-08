@@ -14,8 +14,10 @@ class LoginFooterLinks extends StatelessWidget {
       color: context.sanadDim,
       fontWeight: FontWeight.w600,
     );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 4,
       children: [
         Text(isArabic ? 'سياسة الخصوصية' : 'Privacy Policy', style: s),
         Padding(

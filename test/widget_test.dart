@@ -1,3 +1,5 @@
+import 'support/laravel_auth_fixture.dart';
+import 'package:sanad/application/auth/auth_scope.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,7 +16,12 @@ import 'package:sanad/domain/models/user_role.dart';
 import 'package:sanad/presentation/widgets/shared_widgets/sanad_button.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  late LaravelAuthFixture fixture;
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    fixture = LaravelAuthFixture();
+  });
+  tearDown(() => fixture.close());
 
   // The welcome watch animates continuously; advance finite transitions explicitly.
   Future<void> settle(WidgetTester tester) async {
@@ -29,9 +36,12 @@ void main() {
     LocaleController? controller,
   }) async {
     await tester.pumpWidget(
-      LocaleScope(
-        controller: controller ?? LocaleController(),
-        child: const SanadApp(),
+      AuthScope(
+        auth: fixture.auth,
+        child: LocaleScope(
+          controller: controller ?? LocaleController(),
+          child: const SanadApp(),
+        ),
       ),
     );
     await tester.pump();
