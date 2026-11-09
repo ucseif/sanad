@@ -4,6 +4,7 @@ import '../domain/models/user_role.dart';
 import '../presentation/auth/auth_route_arguments.dart';
 import '../presentation/screens/splash_screen/splash_screen.dart';
 import '../presentation/screens/home_screen/home_screen.dart';
+import '../presentation/screens/caregiver_links_screen/caregiver_links_screen.dart';
 import '../presentation/screens/language_screen/language_screen.dart';
 import '../presentation/screens/onboarding/onboarding_screen.dart';
 import '../presentation/screens/role_selection/role_selection_screen.dart';
@@ -15,6 +16,7 @@ abstract final class AppRoutes {
   static const String splash = SplashScreen.routeName;
   static const String language = LanguageScreen.routeName;
   static const String home = '/home';
+  static const String caregiverLinks = '/caregiver-links';
   static const String onboarding = OnboardingScreen.routeName;
   static const String roleSelection = RoleSelectionScreen.routeName;
   static const String login = LoginScreen.routeName;
@@ -53,6 +55,8 @@ abstract final class AppRoutes {
         return _animatedPage(settings, (_) => const LanguageScreen());
       case home:
         return _animatedPage(settings, (_) => const HomeScreen());
+      case caregiverLinks:
+        return _animatedPage(settings, (_) => const CaregiverLinksScreen());
       case onboarding:
         return _animatedPage(settings, (_) => const OnboardingScreen());
       case roleSelection:

@@ -44,6 +44,12 @@ final class ApiException implements Exception {
   });
 
   static const _codes = {
+    'caregiver-not-found',
+    'relationship-not-found',
+    'forbidden',
+    'duplicate-live-relationship',
+    'caregiver-slots-full',
+    'invalid-relationship-state',
     'validation-failed',
     'invalid-credentials',
     'unauthenticated',

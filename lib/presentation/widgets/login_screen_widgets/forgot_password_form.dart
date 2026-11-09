@@ -10,7 +10,7 @@ class ForgotPasswordForm extends StatelessWidget {
   final TextEditingController email;
   final bool emailError;
   final int emailShake;
-  final VoidCallback onBack, onSubmit;
+  final VoidCallback onSubmit;
   const ForgotPasswordForm({
     super.key,
     required this.isArabic,
@@ -18,7 +18,6 @@ class ForgotPasswordForm extends StatelessWidget {
     required this.email,
     this.emailError = false,
     this.emailShake = 0,
-    required this.onBack,
     required this.onSubmit,
   });
   @override
@@ -40,8 +39,8 @@ class ForgotPasswordForm extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           isArabic
-              ? 'أدخل بريد الحساب. إذا كان مؤهلاً سنطلب إرسال كود عبر واتساب.'
-              : 'Enter your account email. If eligible, WhatsApp code delivery will be requested.',
+              ? 'أدخل بريد حسابك للتحقق منه، ثم أدخل رقم واتساب المرتبط به في الخطوة التالية.'
+              : 'Enter your account email to check it, then confirm its WhatsApp number in the next step.',
           style: t(fontSize: 16, color: context.sanadDim, height: 1.5),
         ),
         const SizedBox(height: 40),
@@ -55,20 +54,10 @@ class ForgotPasswordForm extends StatelessWidget {
         ),
         const SizedBox(height: 32),
         LoginScreenActionButton(
-          text: isArabic ? 'إرسال الكود' : 'Send Code',
+          text: isArabic ? 'التالي' : 'Next',
           loading: loading,
           onTap: onSubmit,
           isArabic: isArabic,
-        ),
-        const SizedBox(height: 14),
-        Center(
-          child: TextButton(
-            onPressed: onBack,
-            child: Text(
-              isArabic ? 'رجوع' : 'Back',
-              style: t(color: context.sanadDim, fontWeight: FontWeight.w700),
-            ),
-          ),
         ),
       ],
     );

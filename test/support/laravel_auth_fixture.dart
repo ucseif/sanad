@@ -34,6 +34,7 @@ class LaravelAuthFixture {
   final requests = <http.Request>[];
   String role = 'caregiver';
   String purpose = 'login';
+  String recoveryPhoneNumber = '+201012345678';
   int? failureStatus;
   String? failureCode;
   String? failurePath;
@@ -75,9 +76,21 @@ class LaravelAuthFixture {
       return http.Response(jsonEncode({'code': failureCode}), failureStatus!);
     }
     switch (r.url.path) {
+      case '/api/auth/password/eligibility':
+        return response('recovery-eligibility-checked', {
+          'eligible':
+              (jsonDecode(r.body) as Map)['email'] != 'unknown@example.com',
+        });
       case '/api/auth/login/start':
       case '/api/auth/signup/start':
       case '/api/auth/password/forgot':
+        if (r.url.path == '/api/auth/password/forgot') {
+          final input = jsonDecode(r.body) as Map;
+          if (input['email'] == 'unknown@example.com' ||
+              input['phone_number'] != recoveryPhoneNumber) {
+            return response('recovery-not-eligible', {}, 422);
+          }
+        }
         purpose = r.url.path.contains('signup')
             ? 'signup'
             : r.url.path.contains('password')
@@ -93,6 +106,8 @@ class LaravelAuthFixture {
             'attempt_id': id,
             'attempt_token': secret,
             'purpose': purpose,
+            if (purpose == 'password_reset') 'recovery_confirmed': true,
+            if (purpose == 'login') 'masked_phone_number': '+20 ****** 5678',
             'otp_started': false,
             'authenticated': false,
             'expires_at': DateTime.now()
@@ -111,6 +126,7 @@ class LaravelAuthFixture {
           {
             'attempt_id': id,
             'otp_started': true,
+            if (purpose == 'password_reset') 'recovery_confirmed': true,
             'authenticated': false,
             'expires_at': DateTime.now()
                 .toUtc()

@@ -27,21 +27,41 @@ final class ApiClient {
   Future<Map<String, dynamic>?> get(
     String path, {
     bool authenticated = false,
-  }) => _request('GET', path, authenticated: authenticated);
+    Map<String, String>? query,
+    String? expectedToken,
+  }) => _request(
+    'GET',
+    path,
+    authenticated: authenticated,
+    query: query,
+    expectedToken: expectedToken,
+  );
   Future<Map<String, dynamic>?> post(
     String path, {
     required Map<String, dynamic> body,
     bool authenticated = false,
-  }) => _request('POST', path, body: body, authenticated: authenticated);
+    String? expectedToken,
+  }) => _request(
+    'POST',
+    path,
+    body: body,
+    authenticated: authenticated,
+    expectedToken: expectedToken,
+  );
 
   Future<Map<String, dynamic>?> _request(
     String method,
     String path, {
     Map<String, dynamic>? body,
+    Map<String, String>? query,
+    String? expectedToken,
     required bool authenticated,
   }) async {
-    final request = http.Request(method, config.endpoint(path))
-      ..followRedirects = false;
+    final endpoint = config.endpoint(path);
+    final request = http.Request(
+      method,
+      query == null ? endpoint : endpoint.replace(queryParameters: query),
+    )..followRedirects = false;
     request.headers['Accept'] = 'application/json';
     if (body != null) {
       request.headers['Content-Type'] = 'application/json; charset=utf-8';
@@ -51,6 +71,9 @@ final class ApiClient {
     if (authenticated) {
       attached = await _tokens.read();
       if (attached == null) throw ApiException(code: 'unauthenticated');
+      if (expectedToken != null && attached.value != expectedToken) {
+        throw ApiException(code: 'session-changed');
+      }
       if (attached.isExpired(_now())) {
         await _tokens.clearIfMatches(attached);
         throw ApiException(code: 'token-expired');

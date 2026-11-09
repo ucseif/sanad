@@ -16,15 +16,16 @@ import '../../../core/theme/app_color.dart';
 import '../../../presentation/auth/auth_route_arguments.dart';
 import '../../../presentation/widgets/auth/sanad_auth_logo.dart';
 import '../../../presentation/screens/otp_verification_screen/otp_verification_screen.dart';
+import '../recovery_phone_screen/recovery_phone_screen.dart';
 import '../../../utils/routes.dart';
 import '../../widgets/login_screen_widgets/forgot_password_form.dart';
 import '../../widgets/login_screen_widgets/login_footer_links.dart';
 import '../../widgets/shared_widgets/auth_screen_styles.dart';
+import '../../widgets/recovery_widgets/recovery_progress_header.dart';
 import '../../widgets/login_screen_widgets/login_form.dart';
-import '../../widgets/login_screen_widgets/login_otp_form.dart';
 import '../../widgets/login_screen_widgets/reset_password_form.dart';
 
-enum _AuthView { login, otpVerify, forgotPassword, resetNewPassword }
+enum _AuthView { login, forgotPassword, resetNewPassword }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.arguments, this.authService});
@@ -51,16 +52,10 @@ class _LoginScreenState extends State<LoginScreen>
 
   final _loginUsername = TextEditingController();
   final _loginPassword = TextEditingController();
-  final _otpCode = TextEditingController();
   final _forgotEmail = TextEditingController();
   final _resetNewPass = TextEditingController();
   final _resetNewConfirm = TextEditingController();
-
-  final List<FocusNode> _otpFocus = List.generate(6, (_) => FocusNode());
-  final List<TextEditingController> _otpDigits = List.generate(
-    6,
-    (_) => TextEditingController(),
-  );
+  String? _lastRecoveryPhone;
 
   bool _obscureLogin = true, _obscureReset = true, _obscureResetConfirm = true;
   final int _loginUserShake = 0, _loginPassShake = 0, _forgotEmailShake = 0;
@@ -76,9 +71,6 @@ class _LoginScreenState extends State<LoginScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
-
-  int _resendLeft = 0;
-  Timer? _resendTimer;
 
   @override
   void initState() {
@@ -129,49 +121,13 @@ class _LoginScreenState extends State<LoginScreen>
     _toastTimer?.cancel();
 
     _toastEntry?.remove();
-    _resendTimer?.cancel();
     _loginUsername.dispose();
     _loginPassword.dispose();
-    _otpCode.dispose();
     _forgotEmail.dispose();
     _resetNewPass.dispose();
     _resetNewConfirm.dispose();
-    for (final c in _otpDigits) {
-      c.dispose();
-    }
-    for (final f in _otpFocus) {
-      f.dispose();
-    }
     _animController.dispose();
     super.dispose();
-  }
-
-  void _syncOtpCode() {
-    _otpCode.text = _otpDigits.map((e) => e.text.trim()).join();
-  }
-
-  void _clearOtpInputs() {
-    for (final c in _otpDigits) {
-      c.clear();
-    }
-    _otpCode.clear();
-  }
-
-  void _startResendTimer([int seconds = 30]) {
-    _resendTimer?.cancel();
-    setState(() => _resendLeft = seconds);
-    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      if (_resendLeft <= 1) {
-        t.cancel();
-        setState(() => _resendLeft = 0);
-        return;
-      }
-      setState(() => _resendLeft--);
-    });
   }
 
   void _showToast(String message, {required bool success}) {
@@ -264,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
     try {
       final auth = widget.authService ?? AuthScope.read(context);
-      await auth.startLogin(
+      final attempt = await auth.startLogin(
         email: email,
         password: _loginPassword.text,
         language: _isArabic ? 'ar' : 'en',
@@ -275,6 +231,7 @@ class _LoginScreenState extends State<LoginScreen>
         role: widget.arguments.role,
         email: email,
         isLoginVerification: true,
+        phoneNumber: attempt.maskedPhoneNumber,
       );
       final result = await Navigator.of(context).push<String>(
         AppRoutes.transition<String>(
@@ -302,15 +259,25 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   AuthService get _auth => widget.authService ?? AuthScope.read(context);
+
+  void _backFromRecovery() {
+    if (_loading) return;
+    _auth.discardRecovery();
+    if (_view == _AuthView.resetNewPassword) {
+      _resetNewPass.clear();
+      _resetNewConfirm.clear();
+      _go(_AuthView.forgotPassword);
+      _recover('start');
+    } else {
+      _go(_AuthView.login);
+    }
+  }
+
   Future<void> _recover(String action) async {
     if (_loading) return;
     if (action == 'start' &&
         AuthValidators.validateEmail(_forgotEmail.text) != null) {
       _showToast(context.l10n.invalidEmailMessage, success: false);
-      return;
-    }
-    if (action == 'verify' && !RegExp(r'^[0-9]{6}$').hasMatch(_otpCode.text)) {
-      _showToast(context.l10n.otpIncompleteMessage, success: false);
       return;
     }
     if (action == 'reset' &&
@@ -330,32 +297,32 @@ class _LoginScreenState extends State<LoginScreen>
     });
     try {
       if (action == 'start') {
-        await _auth.startRecovery(
-          _forgotEmail.text,
-          language: _isArabic ? 'ar' : 'en',
+        final submittedEmail = _forgotEmail.text.trim().toLowerCase();
+        final eligible = await _auth.checkRecoveryEligibility(submittedEmail);
+        if (!mounted) return;
+        if (_forgotEmail.text.trim().toLowerCase() != submittedEmail) return;
+        if (!eligible) throw ApiException(code: 'recovery-not-eligible');
+        final result = await Navigator.of(context).push<String>(
+          AppRoutes.transition<String>(
+            settings: const RouteSettings(name: RecoveryPhoneScreen.routeName),
+            builder: (_) => RecoveryPhoneScreen(
+              email: submittedEmail,
+              role: widget.arguments.role,
+              initialPhoneNumber: _lastRecoveryPhone,
+              authService: _auth,
+            ),
+          ),
         );
         if (!mounted) return;
-        _clearOtpInputs();
-        _go(_AuthView.otpVerify);
-        final resend = await _auth.sendRecoveryOtp();
-        if (mounted) {
-          _startResendTimer(
-            resend.difference(DateTime.now()).inSeconds.clamp(0, 600),
-          );
-        }
-      } else if (action == 'send') {
-        final resend = await _auth.sendRecoveryOtp();
-        if (mounted) {
-          _clearOtpInputs();
-          _startResendTimer(
-            resend.difference(DateTime.now()).inSeconds.clamp(0, 600),
-          );
-        }
-      } else if (action == 'verify') {
-        await _auth.verifyRecoveryOtp(_otpCode.text);
-        if (mounted) {
-          _clearOtpInputs();
+        if (result != null && _auth.hasVerifiedRecovery) {
+          _lastRecoveryPhone = result;
           _go(_AuthView.resetNewPassword);
+        } else {
+          _auth.discardRecovery();
+          _go(_AuthView.forgotPassword);
+          if (result != null) {
+            _error = apiErrorMessage(context.l10n, ApiException(code: result));
+          }
         }
       } else {
         await _auth.resetPassword(_resetNewPass.text, _resetNewConfirm.text);
@@ -364,14 +331,13 @@ class _LoginScreenState extends State<LoginScreen>
           _resetNewConfirm.clear();
           _forgotEmail.clear();
           _loginPassword.clear();
-          _resendTimer?.cancel();
+          _lastRecoveryPhone = null;
           _go(_AuthView.login);
         }
       }
     } catch (error) {
       if (!mounted) return;
       if (!_auth.hasPendingRecovery && action != 'start') {
-        _clearOtpInputs();
         _resetNewPass.clear();
         _resetNewConfirm.clear();
         _view = _AuthView.forgotPassword;
@@ -439,8 +405,7 @@ class _LoginScreenState extends State<LoginScreen>
             canPop: !_loading && _view == _AuthView.login,
             onPopInvokedWithResult: (didPop, result) {
               if (didPop || _loading) return;
-              _auth.discardRecovery();
-              _go(_AuthView.login);
+              _backFromRecovery();
             },
             child: Scaffold(
               backgroundColor: context.sanadBg,
@@ -452,6 +417,13 @@ class _LoginScreenState extends State<LoginScreen>
                     position: _slideAnim,
                     child: Column(
                       children: [
+                        if (_view != _AuthView.login)
+                          RecoveryProgressHeader(
+                            step: _view == _AuthView.forgotPassword
+                                ? RecoveryStep.email
+                                : RecoveryStep.resetPassword,
+                            onBack: _backFromRecovery,
+                          ),
                         if (showHeader)
                           Padding(
                             padding: const EdgeInsets.symmetric(
@@ -500,27 +472,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 },
                                 onSubmit: _signIn,
                               ),
-                              _AuthView.otpVerify => LoginOtpForm(
-                                isArabic: _isArabic,
-                                loading: _loading,
-                                digits: _otpDigits,
-                                focusNodes: _otpFocus,
-                                subtitle: '',
-                                resendLeft: _resendLeft,
-                                onDigitChanged: _syncOtpCode,
-                                onSubmit: () {
-                                  _syncOtpCode();
-                                  _recover('verify');
-                                },
-                                onBack: () {
-                                  if (!_loading) {
-                                    _auth.discardRecovery();
-                                    _clearOtpInputs();
-                                    _go(_AuthView.forgotPassword);
-                                  }
-                                },
-                                onResend: () => _recover('send'),
-                              ),
                               _AuthView.forgotPassword => Align(
                                 alignment: Alignment.topCenter,
                                 child: SingleChildScrollView(
@@ -533,12 +484,6 @@ class _LoginScreenState extends State<LoginScreen>
                                     email: _forgotEmail,
                                     emailError: _forgotEmailErr,
                                     emailShake: _forgotEmailShake,
-                                    onBack: () {
-                                      if (!_loading) {
-                                        _auth.discardRecovery();
-                                        _go(_AuthView.login);
-                                      }
-                                    },
                                     onSubmit: () => _recover('start'),
                                   ),
                                 ),
@@ -567,12 +512,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       () => _obscureResetConfirm =
                                           !_obscureResetConfirm,
                                     ),
-                                    onBack: () {
-                                      if (!_loading) {
-                                        _auth.discardRecovery();
-                                        _go(_AuthView.login);
-                                      }
-                                    },
+                                    onBack: _backFromRecovery,
                                     onSubmit: () => _recover('reset'),
                                   ),
                                 ),

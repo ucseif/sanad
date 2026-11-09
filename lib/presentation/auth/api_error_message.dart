@@ -22,6 +22,10 @@ String apiErrorMessage(AppLocalizations l10n, Object error) {
   }
   final code = apiErrorCode(error);
   return switch (code) {
+    'recovery-not-eligible' =>
+      l10n.isArabic
+          ? 'تعذر المتابعة بهذه البيانات. راجعها وحاول مجددًا.'
+          : 'Unable to continue with these details. Check them and try again.',
     'invalid-credentials' => l10n.authInvalidCredentials,
     'invalid-email' => l10n.invalidEmailMessage,
     'invalid-phone-number' => l10n.invalidPhoneMessage,

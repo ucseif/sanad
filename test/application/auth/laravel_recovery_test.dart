@@ -12,7 +12,11 @@ void main() {
   test(
     'expired reset proof is discarded and requires a fresh attempt',
     () async {
-      await f.auth.startRecovery('amina@example.com', language: 'en');
+      await f.auth.startRecovery(
+        'amina@example.com',
+        language: 'en',
+        phoneNumber: '+201012345678',
+      );
       await f.auth.verifyRecoveryOtp('123456');
       f.failurePath = '/api/auth/password/reset';
       f.failureStatus = 410;
@@ -30,9 +34,13 @@ void main() {
       expect(f.requests.length, before);
     },
   );
-  for (final email in ['amina@example.com', 'unknown@example.com']) {
-    test('neutral recovery for $email never authenticates', () async {
-      await f.auth.startRecovery(email, language: 'en');
+  for (final email in ['amina@example.com']) {
+    test('confirmed recovery for $email never authenticates', () async {
+      await f.auth.startRecovery(
+        email,
+        language: 'en',
+        phoneNumber: '+201012345678',
+      );
       final resend = await f.auth.sendRecoveryOtp();
       expect(resend.isAfter(DateTime.now()), isTrue);
       expect(await f.tokens.read(), isNull);
@@ -48,6 +56,42 @@ void main() {
     });
   }
   test(
+    'eligibility alone creates no attempt and cannot authorize reset',
+    () async {
+      expect(
+        await f.auth.checkRecoveryEligibility(' AMINA@EXAMPLE.COM '),
+        isTrue,
+      );
+      expect(
+        await f.auth.checkRecoveryEligibility('unknown@example.com'),
+        isFalse,
+      );
+      expect(f.auth.hasPendingRecovery, isFalse);
+      expect(f.auth.hasVerifiedRecovery, isFalse);
+      await expectLater(
+        f.auth.resetPassword('NewStrongPass1!', 'NewStrongPass1!'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(
+        f.requests.map((r) => r.url.path),
+        everyElement('/api/auth/password/eligibility'),
+      );
+      expect(await f.tokens.read(), isNull);
+    },
+  );
+  test('unknown email cannot create a recovery attempt', () async {
+    await expectLater(
+      f.auth.startRecovery(
+        'unknown@example.com',
+        language: 'en',
+        phoneNumber: '+201012345678',
+      ),
+      throwsA(isA<ApiException>()),
+    );
+    expect(f.auth.hasPendingRecovery, isFalse);
+    expect(f.auth.hasVerifiedRecovery, isFalse);
+  });
+  test(
     'invalid expired and unavailable verification never grants reset proof',
     () async {
       for (final code in [
@@ -56,7 +100,11 @@ void main() {
         'too-many-requests',
         'otp-service-unavailable',
       ]) {
-        await f.auth.startRecovery('amina@example.com', language: 'ar');
+        await f.auth.startRecovery(
+          'amina@example.com',
+          language: 'ar',
+          phoneNumber: '+201012345678',
+        );
         f.failureStatus = code == 'otp-expired'
             ? 410
             : code == 'too-many-requests'
@@ -84,7 +132,11 @@ void main() {
           expiresAt: DateTime.now().add(const Duration(days: 1)),
         ),
       );
-      await f.auth.startRecovery('amina@example.com', language: 'en');
+      await f.auth.startRecovery(
+        'amina@example.com',
+        language: 'en',
+        phoneNumber: '+201012345678',
+      );
       await f.auth.verifyRecoveryOtp('123456');
       f.failurePath = '/api/auth/password/reset';
       f.failureStatus = 503;

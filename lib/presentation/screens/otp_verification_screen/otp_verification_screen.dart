@@ -8,20 +8,25 @@ import '../../../data/network/api_exception.dart';
 import '../../../utils/routes.dart';
 import '../../auth/auth_route_arguments.dart';
 import '../../auth/api_error_message.dart';
+import '../../auth/phone_number_display.dart';
 import '../home_screen/home_screen.dart';
 import '../../widgets/otp_verification_screen_widgets/otp_verification_content.dart';
 import '../../widgets/otp_verification_screen_widgets/otp_verification_header.dart';
 import '../../widgets/otp_verification_screen_widgets/otp_verification_submit_button.dart';
+import '../../widgets/recovery_widgets/recovery_progress_header.dart';
+import '../../widgets/auth/sanad_auth_logo.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   const OtpVerificationScreen({
     super.key,
     required this.arguments,
     this.authService,
+    this.initialRecoveryResendAt,
   });
   static const routeName = '/otp-verification';
   final AuthRouteArguments arguments;
   final AuthService? authService;
+  final DateTime? initialRecoveryResendAt;
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
@@ -37,6 +42,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.arguments.isPasswordRecovery &&
+        widget.initialRecoveryResendAt != null) {
+      _resendAt = widget.initialRecoveryResendAt;
+      _startCountdown();
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _sendCode();
     });
@@ -48,14 +59,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     super.dispose();
   }
 
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   void _back() {
     if (_busy || _sending) return;
+    _discardAttempt();
+    Navigator.maybePop(context);
+  }
+
+  void _discardAttempt() {
+    if (widget.arguments.isPasswordRecovery) {
+      _auth.discardRecovery();
+      return;
+    }
     if (widget.arguments.isLoginVerification) {
       _auth.login.discardPendingAttempt();
     } else {
       _auth.discardSignup();
     }
-    Navigator.maybePop(context);
   }
 
   Future<void> _sendCode() async {
@@ -65,19 +91,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _errorText = null;
     });
     try {
-      final sent = widget.arguments.isLoginVerification
-          ? await _auth.sendLoginOtp()
-          : await _auth.sendSignupOtp();
+      final resendAt = widget.arguments.isPasswordRecovery
+          ? await _auth.sendRecoveryOtp()
+          : (widget.arguments.isLoginVerification
+                    ? await _auth.sendLoginOtp()
+                    : await _auth.sendSignupOtp())
+                .resendAt;
       if (!mounted) return;
       setState(() {
-        _resendAt = sent.resendAt;
+        _resendAt = resendAt;
         _code = '';
         _inputRevision++;
       });
-      _countdownTimer?.cancel();
-      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
+      _startCountdown();
     } catch (error) {
       if (mounted) {
         if (error is ApiException &&
@@ -109,6 +135,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _errorText = null;
     });
     try {
+      if (widget.arguments.isPasswordRecovery) {
+        await _auth.verifyRecoveryOtp(_code);
+        if (!mounted) return;
+        _verified = true;
+        Navigator.of(context).pop('password-recovery-verified');
+        return;
+      }
       final user = widget.arguments.isLoginVerification
           ? await _auth.verifyLoginOtp(_code)
           : await _auth.verifySignupOtp(_code);
@@ -136,7 +169,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               _auth.attemptExpired(
                 loginFlow: widget.arguments.isLoginVerification,
               )) ||
-          (!widget.arguments.isLoginVerification && !_auth.hasPendingSignup)) {
+          (widget.arguments.isPasswordRecovery
+              ? !_auth.hasPendingRecovery
+              : !widget.arguments.isLoginVerification &&
+                    !_auth.hasPendingSignup)) {
         Navigator.of(context).pop(apiErrorCode(error));
         return;
       }
@@ -144,14 +180,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  String _maskedPhone(String? phone) {
-    final value = phone?.trim() ?? '';
-    if (value.isEmpty) return '—';
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length <= 4) return '••••$digits';
-    return '+••••••${digits.substring(digits.length - 4)}';
   }
 
   @override
@@ -162,12 +190,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     return PopScope(
       canPop: !_busy && !_sending,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop && !_auth.isBusy) {
-          if (widget.arguments.isLoginVerification) {
-            _auth.login.discardPendingAttempt();
-          } else {
-            _auth.discardSignup();
-          }
+        if (didPop && !_verified && !_auth.isBusy) {
+          _discardAttempt();
         }
       },
       child: Scaffold(
@@ -181,7 +205,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    OtpVerificationHeader(backLabel: l10n.back, onBack: _back),
+                    if (widget.arguments.isPasswordRecovery) ...[
+                      RecoveryProgressHeader(
+                        step: RecoveryStep.otp,
+                        onBack: _back,
+                        horizontalPadding: 0,
+                      ),
+                      const SizedBox(height: 12),
+                      const Center(child: SanadAuthLogo(artworkWidth: 100)),
+                    ] else
+                      OtpVerificationHeader(
+                        backLabel: l10n.back,
+                        onBack: _back,
+                      ),
                     const SizedBox(height: 24),
                     Expanded(
                       child: SingleChildScrollView(
@@ -193,7 +229,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                               ? 'أدخل الرمز المكوّن من 6 أرقام المرسل عبر'
                               : 'Enter the 6-digit code sent to you on',
                           whatsAppLabel: isArabic ? 'واتساب' : 'WhatsApp',
-                          phoneNumber: _maskedPhone(
+                          phoneNumber: maskedWhatsAppNumber(
                             widget.arguments.phoneNumber,
                           ),
                           codeLabel: l10n.otpCodeLabel,

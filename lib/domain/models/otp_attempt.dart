@@ -16,11 +16,13 @@ final class OtpAttempt {
     required this.token,
     required this.purpose,
     required this.expiresAt,
+    this.maskedPhoneNumber,
   });
   final String id;
   final String token;
   final OtpPurpose purpose;
   final DateTime expiresAt;
+  final String? maskedPhoneNumber;
 
   factory OtpAttempt.fromJson(Map<String, dynamic> json) {
     final id = authString(json['attempt_id']);
@@ -41,6 +43,9 @@ final class OtpAttempt {
       token: authSecret(json['attempt_token']),
       purpose: purpose,
       expiresAt: authTimestamp(json['expires_at']),
+      maskedPhoneNumber: json['masked_phone_number'] is String
+          ? json['masked_phone_number'] as String
+          : null,
     );
   }
 

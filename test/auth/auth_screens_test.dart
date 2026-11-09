@@ -141,7 +141,8 @@ void main() {
         .widget<OtpVerificationScreen>(find.byType(OtpVerificationScreen))
         .arguments;
     expect(arguments.isLoginVerification, isTrue);
-    expect(arguments.phoneNumber, isNull);
+    expect(arguments.phoneNumber, '+20 ****** 5678');
+    expect(find.text('+20 •••••• 5678'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('otp-code-field')),
       '000000',

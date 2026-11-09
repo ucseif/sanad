@@ -18,6 +18,7 @@ void main() {
   Future<void> pumpOtp(
     WidgetTester tester, {
     Locale locale = const Locale('en'),
+    String phoneNumber = '+201012345678',
   }) async {
     await fixture.auth.startLogin(
       email: 'amina@example.com',
@@ -27,10 +28,10 @@ void main() {
     await tester.pumpWidget(
       app(
         OtpVerificationScreen(
-          arguments: const AuthRouteArguments(
+          arguments: AuthRouteArguments(
             role: UserRole.patient,
             isLoginVerification: true,
-            phoneNumber: '+201012345678',
+            phoneNumber: phoneNumber,
           ),
         ),
         locale: locale,
@@ -44,13 +45,13 @@ void main() {
   testWidgets('OTP screen shows WhatsApp and hides email', (tester) async {
     await pumpOtp(tester);
     expect(find.textContaining('WhatsApp', findRichText: true), findsOneWidget);
-    expect(find.text('+••••••5678'), findsOneWidget);
+    expect(find.text('+20 •••••• 5678'), findsOneWidget);
     expect(find.textContaining('@'), findsNothing);
   });
 
   testWidgets('Arabic OTP keeps phone and digit entry LTR', (tester) async {
     await pumpOtp(tester, locale: const Locale('ar'));
-    final phone = find.text('+••••••5678');
+    final phone = find.text('+20 •••••• 5678');
     expect(Directionality.of(tester.element(phone)), TextDirection.ltr);
 
     final firstDigit = find.descendant(
@@ -62,6 +63,26 @@ void main() {
       TextDirection.ltr,
     );
   });
+
+  for (final callingCode in [
+    '+20',
+    '+966',
+    '+971',
+    '+965',
+    '+974',
+    '+968',
+    '+973',
+    '+962',
+    '+1',
+    '+44',
+  ]) {
+    testWidgets('OTP masks national digits for $callingCode', (tester) async {
+      await pumpOtp(tester, phoneNumber: '${callingCode}1234567890');
+      expect(find.text('$callingCode •••••• 7890'), findsOneWidget);
+      expect(find.text('${callingCode}1234567890'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 
   testWidgets('OTP requires six digits and accepts a server-verified code', (
     tester,

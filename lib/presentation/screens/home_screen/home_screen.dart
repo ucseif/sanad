@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../application/auth/auth_service.dart';
 import '../../../application/auth/auth_scope.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/localization/caregiving_localizations.dart';
 import '../../../domain/models/app_user.dart';
 import '../../../domain/models/user_role.dart';
 import '../../../utils/routes.dart';
@@ -173,14 +174,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                            ] else if (_tab != 4)
+                            ] else if (_tab != 4) ...[
+                              if (_tab == 0 && user != null) ...[
+                                _linkingEntry(context, user),
+                                const SizedBox(height: 16),
+                              ],
                               HealthDashboard(
                                 tab: _tab,
                                 userName: user?.name,
                                 onOpenProfile: () => setState(() => _tab = 4),
                                 onOpenTab: (tab) => setState(() => _tab = tab),
-                              )
-                            else if (user != null) ...[
+                              ),
+                            ] else if (user != null) ...[
                               // Account & Profile Header
                               Row(
                                 children: [
@@ -217,6 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 16),
+                              _linkingEntry(context, user),
                               const SizedBox(height: 16),
                               Container(
                                 padding: const EdgeInsets.all(20),
@@ -387,6 +394,28 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _linkingEntry(BuildContext context, AppUser user) => Material(
+    color: _darkCard,
+    borderRadius: BorderRadius.circular(20),
+    clipBehavior: Clip.antiAlias,
+    child: ListTile(
+      key: const ValueKey('caregiver-links-entry'),
+      leading: const Icon(
+        Icons.people_outline_rounded,
+        color: Color(0xFF171719),
+      ),
+      title: Text(
+        user.role == UserRole.patient
+            ? context.l10n.caregiversTitle
+            : context.l10n.caregivingTitle,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(context.l10n.linkingEntryHint),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: () => Navigator.of(context).pushNamed(AppRoutes.caregiverLinks),
+    ),
+  );
 }
 
 class _DetailCard extends StatelessWidget {

@@ -40,6 +40,7 @@ class AuthService extends ChangeNotifier {
   AppUser? get currentUser => _user;
   bool get hasPendingSignup => _signup != null;
   bool get hasPendingRecovery => _recovery != null;
+  bool get hasVerifiedRecovery => _recovery != null && _resetProof != null;
 
   /// UI hint only; the server still decides whether verification is valid.
   bool attemptExpired({required bool loginFlow}) {
@@ -201,24 +202,46 @@ class AuthService extends ChangeNotifier {
     _signupProof = null;
   }
 
-  Future<void> startRecovery(String email, {required String language}) =>
-      _run(() async {
-        _recovery = null;
-        _resetProof = null;
-        final attempt = OtpAttempt.fromJson(
-          _data(
-            await api.post(
-              '/api/auth/password/forgot',
-              body: {'email': email.trim().toLowerCase(), 'language': language},
-            ),
-            'password-recovery-started',
-          ),
-        );
-        if (attempt.purpose != OtpPurpose.passwordReset) {
-          throw ApiException(code: 'invalid-response');
-        }
-        _recovery = attempt;
-      });
+  Future<bool> checkRecoveryEligibility(String email) => _run(() async {
+    final data = _data(
+      await api.post(
+        '/api/auth/password/eligibility',
+        body: {'email': email.trim().toLowerCase()},
+      ),
+      'recovery-eligibility-checked',
+    );
+    if (data['eligible'] is! bool) throw ApiException(code: 'invalid-response');
+    return data['eligible'] as bool;
+  });
+
+  Future<OtpAttempt> startRecovery(
+    String email, {
+    required String language,
+    required String phoneNumber,
+  }) => _run(() async {
+    _recovery = null;
+    _resetProof = null;
+    final data = _data(
+      await api.post(
+        '/api/auth/password/forgot',
+        body: {
+          'email': email.trim().toLowerCase(),
+          'language': language,
+          'phone_number': phoneNumber.trim(),
+        },
+      ),
+      'password-recovery-started',
+    );
+    if (data['recovery_confirmed'] != true) {
+      throw ApiException(code: 'invalid-response');
+    }
+    final attempt = OtpAttempt.fromJson(data);
+    if (attempt.purpose != OtpPurpose.passwordReset) {
+      throw ApiException(code: 'invalid-response');
+    }
+    _recovery = attempt;
+    return attempt;
+  });
   Future<DateTime> sendRecoveryOtp() => _run(() async {
     final attempt = _recovery;
     if (attempt == null || _resetProof != null) {
@@ -231,7 +254,9 @@ class AuthService extends ChangeNotifier {
       ),
       'recovery-request-accepted',
     );
-    if (data['authenticated'] != false || data['attempt_id'] != attempt.id) {
+    if (data['authenticated'] != false ||
+        data['attempt_id'] != attempt.id ||
+        data['recovery_confirmed'] != true) {
       throw ApiException(code: 'invalid-response');
     }
     return authTimestamp(data['resend_at']);
@@ -293,6 +318,7 @@ class AuthService extends ChangeNotifier {
         'challenge-used',
         'account-changed',
         'otp-expired',
+        'recovery-not-eligible',
       ].contains(error.code)) {
         _recovery = null;
         _resetProof = null;

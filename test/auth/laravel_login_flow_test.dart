@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sanad/domain/models/user_role.dart';
@@ -61,6 +62,26 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+  testWidgets('login shows the masked destination supplied by the server', (
+    tester,
+  ) async {
+    fixture.override = (request) async {
+      final response = await fixture.respond(request);
+      if (request.url.path != '/api/auth/login/start') return response;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>;
+      data['masked_phone_number'] = '+20 ****** 5678';
+      return fixture.response(
+        body['code'] as String,
+        data,
+        response.statusCode,
+      );
+    };
+    await open(tester);
+    expect(find.text('+20 •••••• 5678'), findsOneWidget);
+    expect(find.text('+201012345678'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('invalid credentials stay on Login and do not save token', (
     tester,
   ) async {
