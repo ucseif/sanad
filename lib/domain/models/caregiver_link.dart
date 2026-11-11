@@ -21,8 +21,10 @@ final class CaregiverLink {
     required this.actions,
     this.acceptedAt,
     this.endedAt,
+    this.patientId,
   });
   final String id;
+  final String? patientId;
   final CaregiverLinkStatus status;
   final PublicLinkUser counterpart;
   final DateTime invitedAt;
@@ -31,6 +33,17 @@ final class CaregiverLink {
   final List<String> actions;
   factory CaregiverLink.fromJson(Map<String, dynamic> json) {
     final id = authString(json['id']);
+    final rawPatientId = json['patient_id'];
+    String? patientId;
+    if (rawPatientId != null) {
+      if (rawPatientId is! String && rawPatientId is! int) {
+        throw const FormatException('Invalid relationship patient identity.');
+      }
+      patientId = rawPatientId.toString();
+      if (!RegExp(r'^[1-9][0-9]*$').hasMatch(patientId)) {
+        throw const FormatException('Invalid relationship patient identity.');
+      }
+    }
     final status = CaregiverLinkStatus.values
         .where((v) => v.name == json['status'])
         .firstOrNull;
@@ -47,6 +60,7 @@ final class CaregiverLink {
     }
     return CaregiverLink(
       id: id,
+      patientId: patientId,
       status: status,
       counterpart: PublicLinkUser.fromJson(
         json['counterpart'] as Map<String, dynamic>,

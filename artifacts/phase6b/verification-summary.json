@@ -1,0 +1,20 @@
+{
+  "passed": 225,
+  "failed": 11,
+  "baseline_failures": 11,
+  "introduced_failures": [],
+  "resolved_baseline_failures": [],
+  "failures": [
+    "floating dock overlays the viewport and leaves the final content visible",
+    "selection indicator travels smoothly between destinations",
+    "reduced motion changes destination without animating the dock",
+    "bottom navigation opens all five pages including the account",
+    "complete reference screens fit en at 320.0",
+    "complete reference screens fit en at 390.0",
+    "complete reference screens fit ar at 320.0",
+    "complete reference screens fit ar at 390.0",
+    "profile retains real account fields and signs out through splash",
+    "Home and Profile open same section and preserve five navigation tabs",
+    "render complete reference dashboard screens"
+  ]
+}

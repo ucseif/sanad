@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_color.dart';
 
-/// Floating capsule navigation in SANAD's monochrome visual language.
+/// Fixed full-width bottom navigation using SANAD's existing line icons.
 class SanadBottomNavigation extends StatelessWidget {
   const SanadBottomNavigation({
     super.key,
@@ -11,9 +11,9 @@ class SanadBottomNavigation extends StatelessWidget {
     required this.onSelected,
   });
 
-  static const double height = 72;
-  static const double bottomSpacing = 12;
-  static const double contentClearance = 20;
+  static const double height = 56;
+  static const double bottomSpacing = 0;
+  static const double contentClearance = 12;
 
   final int selectedIndex;
   final bool isArabic;
@@ -21,165 +21,85 @@ class SanadBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     final destinations = [
       (id: 'home', label: isArabic ? 'الرئيسية' : 'Home'),
-      (id: 'activity', label: isArabic ? 'النشاط' : 'Activity'),
+      (id: 'activity', label: isArabic ? 'الأدوية' : 'Medicines'),
       (id: 'health', label: isArabic ? 'الصحة' : 'Health'),
       (id: 'insights', label: isArabic ? 'المؤشرات' : 'Insights'),
-      (id: 'profile', label: isArabic ? 'حسابي' : 'Profile'),
+      (id: 'settings', label: isArabic ? 'الإعدادات' : 'Settings'),
     ];
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
-        : const Duration(milliseconds: 220);
-    const labelStyle = TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w600,
-      color: AppColor.loginLightBackground,
-    );
+        : const Duration(milliseconds: 180);
 
-    return Align(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Container(
-          height: height,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColor.loginLightBackground,
-            borderRadius: BorderRadius.circular(height / 2),
-            border: Border.all(color: AppColor.loginLightBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x10000000),
-                blurRadius: 16,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Preserve generous icon targets while making room for one label.
-              final inactiveWidth = (constraints.maxWidth / 6).clamp(
-                48.0,
-                double.infinity,
-              );
-              final activeWidth = constraints.maxWidth - inactiveWidth * 4;
-              final labelWidth = (activeWidth - 46).clamp(0.0, double.infinity);
-              // Center the visible icon/text pair, not a full-width text box
-              // whose unused space pushes a short label toward the leading edge.
-              final labelWidths = destinations.map((destination) {
-                final painter = TextPainter(
-                  text: TextSpan(
-                    text: destination.label,
-                    style: DefaultTextStyle.of(context).style.merge(labelStyle),
-                  ),
-                  textDirection: Directionality.of(context),
-                  textScaler: MediaQuery.textScalerOf(context),
-                  maxLines: 1,
-                  ellipsis: '…',
-                )..layout(maxWidth: labelWidth);
-                final width = painter.width;
-                painter.dispose();
-                return width;
-              }).toList(growable: false);
-              return Stack(
-                children: [
-                  AnimatedPositionedDirectional(
-                    duration: duration,
-                    curve: Curves.easeOutCubic,
-                    start: inactiveWidth * selectedIndex,
-                    top: 0,
-                    bottom: 0,
-                    width: activeWidth,
-                    child: DecoratedBox(
-                      key: const ValueKey('nav-selection-indicator'),
-                      decoration: BoxDecoration(
-                        color: AppColor.loginLightText,
-                        borderRadius: BorderRadius.circular(28),
+    return Container(
+      height: height + bottomInset,
+      padding: EdgeInsets.only(bottom: bottomInset),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE8E8EA), width: .7)),
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < destinations.length; index++)
+            Expanded(
+              child: Semantics(
+                key: ValueKey('nav-${destinations[index].id}'),
+                label: destinations[index].label,
+                button: true,
+                selected: selectedIndex == index,
+                onTap: () => onSelected(index),
+                excludeSemantics: true,
+                child: Tooltip(
+                  message: destinations[index].label,
+                  excludeFromSemantics: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onSelected(index),
+                      child: AnimatedContainer(
+                        duration: duration,
+                        curve: Curves.easeOutCubic,
+                        color: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CustomPaint(
+                              size: const Size.square(23),
+                              painter: _NavigationIconPainter(
+                                index: index,
+                                color: selectedIndex == index
+                                    ? AppColor.loginLightText
+                                    : AppColor.loginLightSecondaryText,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              destinations[index].label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                height: 1.1,
+                                fontWeight: selectedIndex == index
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selectedIndex == index
+                                    ? AppColor.loginLightText
+                                    : AppColor.loginLightSecondaryText,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      for (var index = 0; index < destinations.length; index++)
-                        TweenAnimationBuilder<double>(
-                          tween: Tween<double>(
-                            end: selectedIndex == index ? 1 : 0,
-                          ),
-                          duration: duration,
-                          curve: Curves.easeOutCubic,
-                          builder: (context, progress, child) => SizedBox(
-                            width:
-                                inactiveWidth +
-                                (activeWidth - inactiveWidth) * progress,
-                            height: double.infinity,
-                            child: Semantics(
-                              key: ValueKey('nav-${destinations[index].id}'),
-                              label: destinations[index].label,
-                              button: true,
-                              selected: selectedIndex == index,
-                              onTap: () => onSelected(index),
-                              excludeSemantics: true,
-                              child: Tooltip(
-                                message: destinations[index].label,
-                                excludeFromSemantics: true,
-                                child: Material(
-                                  type: MaterialType.transparency,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(28),
-                                    onTap: () => onSelected(index),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          CustomPaint(
-                                            size: const Size.square(24),
-                                            painter: _NavigationIconPainter(
-                                              index: index,
-                                              color: Color.lerp(
-                                                AppColor
-                                                    .loginLightSecondaryText,
-                                                AppColor.loginLightBackground,
-                                                progress,
-                                              )!,
-                                            ),
-                                          ),
-                                          SizedBox(width: 6 * progress),
-                                          ClipRect(
-                                            child: SizedBox(
-                                              width: labelWidths[index] * progress,
-                                              child: Opacity(
-                                                opacity: progress,
-                                                child: Text(
-                                                  destinations[index].label,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: labelStyle,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -259,16 +179,15 @@ class _NavigationIconPainter extends CustomPainter {
         canvas.drawLine(const Offset(12, 16.5), const Offset(12, 7.5), pen);
         canvas.drawLine(const Offset(16.5, 16.5), const Offset(16.5, 10), pen);
       case 4:
-        canvas.drawCircle(const Offset(12, 7), 3.7, pen);
-        canvas.drawPath(
-          Path()
-            ..moveTo(4, 21)
-            ..lineTo(4.6, 17.6)
-            ..cubicTo(5.4, 12.9, 18.6, 12.9, 19.4, 17.6)
-            ..lineTo(20, 21)
-            ..close(),
-          pen,
-        );
+        canvas.drawCircle(const Offset(12, 12), 5.2, pen);
+        canvas.drawCircle(const Offset(12, 12), 1.8, pen);
+        for (var tooth = 0; tooth < 8; tooth++) {
+          canvas.save();
+          canvas.translate(12, 12);
+          canvas.rotate(tooth * 3.141592653589793 / 4);
+          canvas.drawLine(const Offset(0, -7), const Offset(0, -10), pen);
+          canvas.restore();
+        }
     }
     canvas.restore();
   }

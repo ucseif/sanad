@@ -41,12 +41,29 @@ final class ApiClient {
     required Map<String, dynamic> body,
     bool authenticated = false,
     String? expectedToken,
+    String? idempotencyKey,
   }) => _request(
     'POST',
     path,
     body: body,
     authenticated: authenticated,
     expectedToken: expectedToken,
+    idempotencyKey: idempotencyKey,
+  );
+
+  Future<Map<String, dynamic>?> patch(
+    String path, {
+    required Map<String, dynamic> body,
+    bool authenticated = false,
+    String? expectedToken,
+    String? idempotencyKey,
+  }) => _request(
+    'PATCH',
+    path,
+    body: body,
+    authenticated: authenticated,
+    expectedToken: expectedToken,
+    idempotencyKey: idempotencyKey,
   );
 
   Future<Map<String, dynamic>?> _request(
@@ -56,6 +73,7 @@ final class ApiClient {
     Map<String, String>? query,
     String? expectedToken,
     required bool authenticated,
+    String? idempotencyKey,
   }) async {
     final endpoint = config.endpoint(path);
     final request = http.Request(
@@ -63,6 +81,14 @@ final class ApiClient {
       query == null ? endpoint : endpoint.replace(queryParameters: query),
     )..followRedirects = false;
     request.headers['Accept'] = 'application/json';
+    if (idempotencyKey != null) {
+      if (!RegExp(
+        r'^[a-fA-F0-9]{8}-(?:[a-fA-F0-9]{4}-){3}[a-fA-F0-9]{12}$',
+      ).hasMatch(idempotencyKey)) {
+        throw ArgumentError('A UUID idempotency key is required.');
+      }
+      request.headers['Idempotency-Key'] = idempotencyKey;
+    }
     if (body != null) {
       request.headers['Content-Type'] = 'application/json; charset=utf-8';
       request.body = jsonEncode(body);

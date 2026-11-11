@@ -11,6 +11,10 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "sanad/device")
             .setMethodCallHandler { call, result ->
+                if (call.method == "getTimezone") {
+                    result.success(java.util.TimeZone.getDefault().id)
+                    return@setMethodCallHandler
+                }
                 if (call.method != "getBatteryLevel") {
                     result.notImplemented()
                     return@setMethodCallHandler

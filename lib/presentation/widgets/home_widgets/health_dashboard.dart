@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/localization/app_localizations.dart';
+import '../../../application/auth/auth_service.dart';
+import 'medications_content.dart';
 import 'reference_ui.dart';
 
 String _t(BuildContext context, String en, String ar) =>
@@ -19,17 +21,27 @@ class HealthDashboard extends StatelessWidget {
     required this.tab,
     required this.onOpenTab,
     this.userName,
+    this.userId,
     this.onOpenProfile,
+    this.authService,
+    this.selectedPatientId,
   });
 
   final int tab;
   final ValueChanged<int> onOpenTab;
   final String? userName;
+  final String? userId;
   final VoidCallback? onOpenProfile;
+  final AuthService? authService;
+  final String? selectedPatientId;
 
   @override
   Widget build(BuildContext context) => switch (tab) {
-    1 => const ActivityContent(),
+    1 => MedicationsContent(
+      userId: userId ?? '',
+      authService: authService,
+      selectedPatientId: selectedPatientId,
+    ),
     2 => HealthContent(onOpenTrends: () => onOpenTab(3)),
     3 => const TrendsContent(),
     _ => _TodayContent(userName: userName, onOpenProfile: onOpenProfile),
@@ -1469,7 +1481,7 @@ class _HealthContentState extends State<HealthContent>
         animation: _heartMonitor,
         builder: (context, child) {
           final phase = _heartMonitor.value;
-          final bpm = 60 + (math.sin(phase * math.pi * 2) * 2).round();
+          final bpm = 72 + (math.sin(phase * math.pi * 2) * 2).round();
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1591,14 +1603,14 @@ class _HealthContentState extends State<HealthContent>
                 Padding(
                   padding: const EdgeInsets.only(bottom: 13),
                   child: SizedBox(
-                    height: 76,
+                    height: 84,
                     child: OverflowBox(
                       minWidth: 0,
                       maxWidth: double.infinity,
                       alignment: Alignment.center,
                       child: SizedBox(
                         width: MediaQuery.sizeOf(context).width,
-                        height: 76,
+                        height: 84,
                         child: CustomPaint(
                           painter: _HeartRateMonitorPainter(progress: phase),
                         ),
@@ -1745,141 +1757,124 @@ class _HealthContentState extends State<HealthContent>
         ],
       ),
       const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: _HealthSignalTile(
-              title: _t(context, 'Sleep', 'النوم'),
-              value: _showReferencePreviewData ? '7h 14m' : '—',
-              detail: _showReferencePreviewData
-                  ? _t(context, 'Score 72 · Fair', 'التقييم 72 · متوسط')
-                  : _t(context, 'No reading', 'لا توجد قراءة'),
-              icon: ReferenceSymbol.moon,
-              color: const Color(0xFF8D63C7),
-              tint: const Color(0xFFF3EFF9),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _HealthSignalTile(
-              title: _t(context, 'Weight', 'الوزن'),
-              value: _showReferencePreviewData ? '70 kg' : '—',
-              detail: _showReferencePreviewData
-                  ? _t(context, 'Sample reading', 'قراءة تجريبية')
-                  : _t(context, 'No reading', 'لا توجد قراءة'),
-              icon: ReferenceSymbol.weight,
-              color: const Color(0xFF6D63CB),
-              tint: const Color(0xFFF0EFF9),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 9),
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F8F8),
-          borderRadius: BorderRadius.circular(15),
+          color: const Color(0xFFF2F8F7),
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ReferenceIcon(
-              ReferenceSymbol.oxygen,
-              size: 19,
-              color: Color(0xFF3C9FB0),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                _t(context, 'Blood oxygen', 'أكسجين الدم'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: ReferenceUi.ink,
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F1EF),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  alignment: Alignment.center,
+                  child: const ReferenceIcon(
+                    ReferenceSymbol.oxygen,
+                    size: 19,
+                    color: Color(0xFF3C9FB0),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _t(context, 'Blood oxygen', 'أكسجين الدم'),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: ReferenceUi.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'SpO₂',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: ReferenceUi.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _t(context, 'NO DATA', 'لا توجد قراءة'),
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: ReferenceUi.secondary,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              _t(context, 'No reading', 'لا توجد قراءة'),
-              style: const TextStyle(
-                fontSize: 10,
-                color: ReferenceUi.secondary,
-              ),
+            const SizedBox(height: 13),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  '—',
+                  style: TextStyle(
+                    fontSize: 35,
+                    height: 1,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -1.5,
+                    color: ReferenceUi.ink,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '%',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: ReferenceUi.secondary,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      _t(
+                        context,
+                        'Wear your band to see a reading.',
+                        'ارتدِ السوار لعرض القراءة.',
+                      ),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: ReferenceUi.secondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     ],
-  );
-}
-
-class _HealthSignalTile extends StatelessWidget {
-  const _HealthSignalTile({
-    required this.title,
-    required this.value,
-    required this.detail,
-    required this.icon,
-    required this.color,
-    required this.tint,
-  });
-
-  final String title;
-  final String value;
-  final String detail;
-  final ReferenceSymbol icon;
-  final Color color;
-  final Color tint;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(minHeight: 112),
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: tint,
-      borderRadius: BorderRadius.circular(19),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            ReferenceIcon(icon, size: 15, color: color),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: ReferenceUi.secondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 21,
-            height: 1,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -.5,
-            color: ReferenceUi.ink,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          detail,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 9, color: ReferenceUi.secondary),
-        ),
-      ],
-    ),
   );
 }
 
@@ -1923,8 +1918,8 @@ class _HeartRateMonitorPainter extends CustomPainter {
     if (size.isEmpty) return;
     const horizontalPadding = 0.0;
     final chartWidth = size.width - horizontalPadding * 2;
-    final centerY = size.height * .56;
-    final amplitude = size.height * .36;
+    final centerY = size.height * .54;
+    final amplitude = size.height * .58;
 
     for (var row = 0; row < 3; row++) {
       final y = size.height * (.18 + row * .37);
@@ -1948,11 +1943,11 @@ class _HeartRateMonitorPainter extends CustomPainter {
     }
 
     final trace = Path();
-    const visibleBeats = 3.0;
+    const visibleBeats = 1.8;
     const points = 420;
     for (var index = 0; index <= points; index++) {
       final xRatio = index / points;
-      final cycle = (xRatio * visibleBeats + progress * 9) % 1;
+      final cycle = (xRatio * visibleBeats + progress * 16.8) % 1;
       final point = Offset(
         horizontalPadding + chartWidth * xRatio,
         centerY - _signalAt(cycle) * amplitude,
@@ -1978,7 +1973,7 @@ class _HeartRateMonitorPainter extends CustomPainter {
       Paint()
         ..color = const Color(0xFFD85D68)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
+        ..strokeWidth = 2.5
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );

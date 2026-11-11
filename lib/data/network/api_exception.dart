@@ -44,6 +44,17 @@ final class ApiException implements Exception {
   });
 
   static const _codes = {
+    'patient-not-found',
+    'medication-not-found',
+    'dose-not-found',
+    'version-conflict',
+    'idempotency-conflict',
+    'medication-archived',
+    'dose-cancelled',
+    'revision-not-effective',
+    'dose-already-resolved',
+    'dose-not-missed',
+    'late-intake-required',
     'caregiver-not-found',
     'relationship-not-found',
     'forbidden',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../domain/models/app_user.dart';
 import '../domain/models/user_role.dart';
 import '../presentation/auth/auth_route_arguments.dart';
 import '../presentation/screens/splash_screen/splash_screen.dart';
@@ -33,17 +34,11 @@ abstract final class AppRoutes {
     WidgetBuilder builder,
   ) => PageRouteBuilder<T>(
     settings: settings,
-    transitionDuration: const Duration(milliseconds: 160),
-    reverseTransitionDuration: const Duration(milliseconds: 130),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
     pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final fade = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeInOutCubic,
-      );
-
-      return FadeTransition(opacity: fade, child: child);
-    },
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        child,
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -54,7 +49,14 @@ abstract final class AppRoutes {
       case language:
         return _animatedPage(settings, (_) => const LanguageScreen());
       case home:
-        return _animatedPage(settings, (_) => const HomeScreen());
+        return _animatedPage(
+          settings,
+          (_) => HomeScreen(
+            initialUser: settings.arguments is AppUser
+                ? settings.arguments! as AppUser
+                : null,
+          ),
+        );
       case caregiverLinks:
         return _animatedPage(settings, (_) => const CaregiverLinksScreen());
       case onboarding:

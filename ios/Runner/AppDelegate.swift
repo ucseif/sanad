@@ -18,6 +18,10 @@ import UIKit
       binaryMessenger: engineBridge.applicationRegistrar.messenger()
     )
     batteryChannel.setMethodCallHandler { call, result in
+      if call.method == "getTimezone" {
+        result(TimeZone.current.identifier)
+        return
+      }
       guard call.method == "getBatteryLevel" else {
         result(FlutterMethodNotImplemented)
         return
